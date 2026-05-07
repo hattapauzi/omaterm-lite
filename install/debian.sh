@@ -1,4 +1,12 @@
 install_packages() {
+  local DEB_ARCH BINARY_ARCH
+  DEB_ARCH="$(dpkg --print-architecture)"
+  case "$DEB_ARCH" in
+    amd64) BINARY_ARCH="x86_64" ;;
+    arm64) BINARY_ARCH="arm64" ;;
+    *) echo "Unsupported architecture: $DEB_ARCH"; return 1 ;;
+  esac
+
   section "Updating system packages..."
   sudo apt-get update
   sudo apt-get upgrade -y
@@ -8,11 +16,22 @@ install_packages() {
   sudo apt-get install -y \
     build-essential git openssh-server libssl-dev sudo less net-tools whois \
     fzf eza zoxide tmux btop jq man-db \
-    vim neovim luarocks \
+    vim luarocks \
     clang llvm rustc libyaml-0-2 \
     curl wget gpg \
     docker.io docker-compose \
     kitty-terminfo
+
+  # Neovim from Debian/Ubuntu repos is too old for LazyVim. Use the official stable build when needed.
+  local NVIM_BIN
+  if ! NVIM_BIN="$(type -P nvim)" || ! dpkg --compare-versions "$($NVIM_BIN --version | awk 'NR == 1 { sub(/^v/, "", $2); print $2 }')" ge "0.11.2"; then
+    section "Installing Neovim..."
+    sudo apt-get remove -y neovim neovim-runtime 2>/dev/null || true
+    sudo rm -rf "/opt/nvim-linux-${BINARY_ARCH}"
+    curl -fsSL "https://github.com/neovim/neovim/releases/download/stable/nvim-linux-${BINARY_ARCH}.tar.gz" | sudo tar -C /opt -xz
+    sudo ln -sfn "/opt/nvim-linux-${BINARY_ARCH}/bin/nvim" /usr/local/bin/nvim
+    hash -r
+  fi
 
   # docker-buildx (skip if docker-buildx-plugin from Docker's repo is already installed)
   if ! dpkg -l docker-buildx-plugin &>/dev/null; then
