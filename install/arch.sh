@@ -1,7 +1,7 @@
 install_packages() {
   local official_pkgs=(
     base-devel git openssh sudo less inetutils whois
-    starship fzf eza zoxide tmux btop jq gum man-db tldr
+    zsh starship fzf eza zoxide tmux btop jq gum man-db tldr
     vim neovim luarocks
     clang llvm rust mise libyaml
     github-cli lazygit lazydocker opencode

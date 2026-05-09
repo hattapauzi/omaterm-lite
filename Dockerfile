@@ -6,7 +6,7 @@ RUN echo "MAKEFLAGS=\"-j$(nproc)\"" >> /etc/makepkg.conf
 # Update system and install official packages
 RUN pacman -Syu --needed --noconfirm \
       base-devel git openssh sudo less inetutils whois \
-      starship fzf eza zoxide tmux btop jq gum man-db tldr \
+      zsh starship fzf eza zoxide tmux btop jq gum man-db tldr \
       vim neovim luarocks \
       clang llvm rust mise libyaml \
       github-cli lazygit lazydocker opencode \
@@ -15,11 +15,12 @@ RUN pacman -Syu --needed --noconfirm \
     pacman -Scc --noconfirm
 
 # Create a non-root user (needed for makepkg/yay)
-RUN useradd -m -s /bin/bash omaterm && \
+RUN useradd -m -s /usr/bin/zsh omaterm && \
     echo "omaterm ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/omaterm
 
 USER omaterm
 WORKDIR /home/omaterm
+ENV SHELL=/usr/bin/zsh
 
 # Install yay
 RUN git clone https://aur.archlinux.org/yay-bin.git /tmp/yay && \
@@ -37,8 +38,8 @@ COPY --chown=omaterm:omaterm config/ /home/omaterm/.config/
 COPY --chown=omaterm:omaterm bin/ /home/omaterm/.local/bin/
 RUN chmod +x /home/omaterm/.local/bin/*
 
-# Auto-start tmux in .bashrc
-RUN cat >> /home/omaterm/.bashrc <<'EOF'
+# Auto-start tmux in .zshrc
+RUN cat >> /home/omaterm/.zshrc <<'EOF'
 
 if [[ -z $TMUX ]]; then
   t

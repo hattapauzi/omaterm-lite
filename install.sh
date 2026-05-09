@@ -240,6 +240,22 @@ install_bins() {
   echo "✓ omaterm-refresh"
 }
 
+configure_shell() {
+  section "Configuring shell..."
+  local username zsh_path current_shell
+
+  username="${USER:-$(id -un)}"
+  zsh_path="$(command -v zsh)"
+  current_shell="$(getent passwd "$username" | cut -d: -f7)"
+
+  if [ "$current_shell" != "$zsh_path" ]; then
+    as_root usermod -s "$zsh_path" "$username"
+  fi
+
+  export SHELL="$zsh_path"
+  echo "✓ Zsh"
+}
+
 install_mise_tools() {
   section "Installing Ruby + Node..."
   eval "$(mise activate bash)" 2>/dev/null || true
@@ -316,6 +332,9 @@ run_installation() {
 
   # OS-specific package installation
   install_packages
+
+  # Make Zsh the default shell before Omadots writes shell config
+  configure_shell
 
   # Omadots
   install_omadots
