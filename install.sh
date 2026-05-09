@@ -188,7 +188,7 @@ maybe_reexec_as_non_root() {
   section "Restarting installer as $target_user..."
   chmod -R a+rX "$installer_dir"
 
-  if sudo -iu "$target_user" bash "$installer_dir/install.sh"; then
+  if sudo -iu "$target_user" env OMATERM_REF="$OMATERM_REF" bash "$installer_dir/install.sh"; then
     echo
     echo "Omaterm installed for $target_user. You're back at the root shell."
     echo "To start using Omaterm, either log out and log back in as $target_user, or run:"
@@ -363,10 +363,12 @@ if ! command -v git &>/dev/null; then
 fi
 
 REPO="https://github.com/omacom-io/omaterm.git"
+OMATERM_REF="${OMATERM_REF:-master}"
 INSTALLER_DIR="$(mktemp -d)"
 trap 'rm -rf "$INSTALLER_DIR"' EXIT
 
-git clone --depth 1 "$REPO" "$INSTALLER_DIR"
+echo "Cloning Omaterm from $REPO ($OMATERM_REF)..."
+git clone --depth 1 --branch "$OMATERM_REF" "$REPO" "$INSTALLER_DIR"
 maybe_reexec_as_non_root "$OS_ID" "$INSTALLER_DIR"
 
 # OS detection and dispatch
