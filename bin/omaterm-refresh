@@ -1,7 +1,10 @@
 #!/bin/bash
+set -euo pipefail
 
-# Reinstalls Omaterm with missing packages and default configs.
+# Reinstalls Omaterm Lite with missing packages and default configs.
 
-if gum confirm "Refresh Omaterm (including overwriting configs)?"; then
-  curl -fsSL https://omaterm.org/install | bash
-fi
+printf "Refresh Omaterm Lite (including overwriting configs)? [y/N] "
+IFS= read -r reply
+case "${reply,,}" in
+  y|yes) curl -fsSL https://omaterm.org/install | bash ;;
+esac

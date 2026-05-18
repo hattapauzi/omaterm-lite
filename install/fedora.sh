@@ -5,11 +5,10 @@ install_packages() {
   section "Installing Fedora packages..."
   sudo dnf install -y @development-tools \
     git openssh-server sudo less net-tools whois \
-    zsh fzf zoxide tmux btop jq man-db tldr \
-    vim neovim luarocks \
+    zsh fzf zoxide tmux btop man-db tldr \
+    vim neovim \
     clang llvm rust cargo libyaml \
     curl wget \
-    gh tailscale \
     kitty-terminfo
 
   # starship (not in Fedora repos)
@@ -43,35 +42,10 @@ install_packages() {
     section "Installing lazydocker..."
     curl -fsSL https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
   fi
-
-  # gum (from Charm repo)
-  if ! command -v gum &>/dev/null; then
-    section "Installing gum..."
-    echo '[charm]
-name=Charm
-baseurl=https://repo.charm.sh/yum/
-enabled=1
-gpgcheck=1
-gpgkey=https://repo.charm.sh/yum/gpg.key' | sudo tee /etc/yum.repos.d/charm.repo
-    sudo dnf install -y gum
-  fi
-
-  # mise (not in Fedora repos)
-  if ! command -v mise &>/dev/null; then
-    section "Installing mise..."
-    curl -fsSL https://mise.run | sh
-    export PATH="$HOME/.local/bin:$PATH"
-  fi
 }
 
 install_npm_tools() {
-  section "Installing AI coding assistants..."
-  if ! command -v opencode &>/dev/null; then
-    npm install -g opencode-ai
-  fi
-  if ! command -v claude-code &>/dev/null; then
-    npm install -g @anthropic-ai/claude-code
-  fi
+  :
 }
 
 enable_services() {

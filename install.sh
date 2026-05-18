@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Common functions for Omaterm installation
+# Common functions for Omaterm Lite installation
 show_banner() {
   clear
   echo
@@ -77,7 +77,7 @@ default_install_user() {
   if [ "${#users[@]}" -eq 1 ]; then
     echo "${users[0]}"
   else
-    echo "omaterm"
+    echo "omaterm-lite"
   fi
 }
 
@@ -96,7 +96,7 @@ prompt_username() {
       echo "$username"
       return 0
     else
-      echo "Use a Linux username like 'omaterm' or 'alice'." > /dev/tty
+      echo "Use a Linux username like 'omaterm-lite' or 'alice'." > /dev/tty
     fi
   done
 }
@@ -149,8 +149,8 @@ ensure_install_user() {
   usermod -aG "$admin_group" "$username"
 
   mkdir -p /etc/sudoers.d
-  printf "%%%s ALL=(ALL:ALL) ALL\n" "$admin_group" > "/etc/sudoers.d/10-omaterm-$admin_group"
-  chmod 0440 "/etc/sudoers.d/10-omaterm-$admin_group"
+  printf "%%%s ALL=(ALL:ALL) ALL\n" "$admin_group" > "/etc/sudoers.d/10-omaterm-lite-$admin_group"
+  chmod 0440 "/etc/sudoers.d/10-omaterm-lite-$admin_group"
   echo "✓ Added $username to $admin_group"
 }
 
@@ -170,8 +170,8 @@ maybe_reexec_as_non_root() {
   fi
 
   echo
-  echo "Omaterm is running as root. If we continue, user config will be installed under /root."
-  echo "It's usually better to install Omaterm as a normal sudo-capable user."
+  echo "Omaterm Lite is running as root. If we continue, user config will be installed under /root."
+  echo "It's usually better to install Omaterm Lite as a normal sudo-capable user."
 
   if ! prompt_confirm "Create/use a non-root user and run the install there instead?" "y"; then
     echo "Continuing as root. Set OMATERM_ALLOW_ROOT=1 to skip this prompt."
@@ -190,14 +190,14 @@ maybe_reexec_as_non_root() {
 
   if sudo -iu "$target_user" env OMATERM_REF="$OMATERM_REF" bash "$installer_dir/install.sh"; then
     echo
-    echo "Omaterm installed for $target_user. You're back at the root shell."
-    echo "To start using Omaterm, either log out and log back in as $target_user, or run:"
+    echo "Omaterm Lite installed for $target_user. You're back at the root shell."
+    echo "To start using Omaterm Lite, either log out and log back in as $target_user, or run:"
     echo "  su - $target_user"
     exit 0
   else
     status=$?
     echo
-    echo "Omaterm install failed for $target_user. You're back at the root shell."
+    echo "Omaterm Lite install failed for $target_user. You're back at the root shell."
     exit "$status"
   fi
 }
@@ -256,19 +256,6 @@ configure_shell() {
   echo "✓ Zsh"
 }
 
-install_mise_tools() {
-  section "Installing Ruby + Node..."
-  eval "$(mise activate bash)" 2>/dev/null || true
-
-  mise use -g node
-
-  mise settings set ruby.compile false
-  mise settings set idiomatic_version_file_enable_tools ruby
-  mise use -g ruby
-
-  export PATH="$HOME/.local/share/mise/shims:$PATH"
-}
-
 setup_docker_group() {
   if ! groups | grep -q docker; then
     if command -v usermod &>/dev/null; then
@@ -282,26 +269,10 @@ setup_docker_group() {
 interactive_setup() {
   section "Interactive setup..."
 
-  if ! gh auth status &>/dev/null; then
-    echo
-    if gum confirm "Authenticate with GitHub?" </dev/tty; then
-      gh auth login
-    fi
-  fi
-
-  if ! tailscale status &>/dev/null; then
-    echo
-    if gum confirm "Connect to Tailscale network?" </dev/tty; then
-      echo "This might take a minute..."
-      sudo systemctl enable --now tailscaled.service
-      sudo tailscale up --ssh --accept-routes
-    fi
-  fi
-
   if grep -qi proxmox /sys/class/dmi/id/product_name 2>/dev/null && [ -e /dev/ttyS0 ]; then
     if ! systemctl is-enabled serial-getty@ttyS0.service &>/dev/null; then
       echo
-      if gum confirm "Proxmox VM detected with serial port. Enable serial console?" </dev/tty; then
+      if prompt_confirm "Proxmox VM detected with serial port. Enable serial console?" "y"; then
         sudo systemctl enable serial-getty@ttyS0.service
         sudo systemctl start serial-getty@ttyS0.service
         echo "✓ Serial console enabled on ttyS0"
@@ -343,12 +314,6 @@ run_installation() {
   install_configs
   install_bins
 
-  # Mise tooling
-  install_mise_tools
-
-  # OS-specific tools that need npm (installed after mise provides node)
-  install_npm_tools
-
   # OS-specific service enabling
   enable_services
 
@@ -364,11 +329,11 @@ run_installation() {
 
 # Getting started
 show_banner
-section "Installing Omaterm..."
+section "Installing Omaterm Lite..."
 
 if ! OS_ID="$(detect_os)"; then
   echo "Error: Unsupported operating system"
-  echo "Omaterm supports Arch Linux, Debian/Ubuntu, and Fedora"
+  echo "Omaterm Lite supports Arch Linux, Debian/Ubuntu, and Fedora"
   exit 1
 fi
 
@@ -381,12 +346,12 @@ if ! command -v git &>/dev/null; then
   esac
 fi
 
-REPO="https://github.com/omacom-io/omaterm.git"
+REPO="https://github.com/omacom-io/omaterm-lite.git"
 OMATERM_REF="${OMATERM_REF:-master}"
 INSTALLER_DIR="$(mktemp -d)"
 trap 'rm -rf "$INSTALLER_DIR"' EXIT
 
-echo "Cloning Omaterm from $REPO ($OMATERM_REF)..."
+echo "Cloning Omaterm Lite from $REPO ($OMATERM_REF)..."
 git clone --depth 1 --branch "$OMATERM_REF" "$REPO" "$INSTALLER_DIR"
 maybe_reexec_as_non_root "$OS_ID" "$INSTALLER_DIR"
 

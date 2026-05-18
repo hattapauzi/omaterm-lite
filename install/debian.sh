@@ -15,8 +15,8 @@ install_packages() {
   sudo apt-get remove -y containerd.io 2>/dev/null || true
   sudo apt-get install -y \
     build-essential git openssh-server libssl-dev sudo less net-tools whois \
-    zsh fzf eza zoxide tmux btop jq man-db \
-    vim luarocks \
+    zsh fzf eza zoxide tmux btop man-db \
+    vim \
     clang llvm rustc libyaml-0-2 \
     curl wget gpg \
     docker.io docker-compose \
@@ -45,21 +45,6 @@ install_packages() {
     sudo apt-get install -y tldr
   fi
 
-  # github-cli (not in Debian/Ubuntu repos)
-  if ! command -v gh &>/dev/null; then
-    section "Installing GitHub CLI..."
-    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-    echo "deb [arch=${DEB_ARCH} signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list
-    sudo apt-get update
-    sudo apt-get install -y gh
-  fi
-
-  # tailscale (not in Debian/Ubuntu repos)
-  if ! command -v tailscale &>/dev/null; then
-    section "Installing Tailscale..."
-    curl -fsSL https://tailscale.com/install.sh | sh
-  fi
-
   # starship (not in Debian/Ubuntu repos)
   if ! command -v starship &>/dev/null; then
     section "Installing starship..."
@@ -81,33 +66,10 @@ install_packages() {
     section "Installing lazydocker..."
     curl -fsSL https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
   fi
-
-  # gum (from Charm apt repo)
-  if ! command -v gum &>/dev/null; then
-    section "Installing gum..."
-    sudo mkdir -p /etc/apt/keyrings
-    curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
-    sudo apt-get update
-    sudo apt-get install -y gum
-  fi
-
-  # mise (not in Ubuntu repos)
-  if ! command -v mise &>/dev/null; then
-    section "Installing mise..."
-    curl -fsSL https://mise.run | sh 2>/dev/null
-    export PATH="$HOME/.local/bin:$PATH"
-  fi
 }
 
 install_npm_tools() {
-  section "Installing AI coding assistants..."
-  if ! command -v opencode &>/dev/null; then
-    npm install -g opencode-ai
-  fi
-  if ! command -v claude-code &>/dev/null; then
-    npm install -g @anthropic-ai/claude-code
-  fi
+  :
 }
 
 enable_services() {

@@ -25,7 +25,15 @@ THEMES=(
 THEME_FILE="$HOME/.config/omaterm/nvim.theme"
 CURRENT=$(cat "$THEME_FILE" 2>/dev/null || echo "default")
 
-theme=$(gum choose --header "Neovim theme (current: $CURRENT)" "${THEMES[@]}")
+theme=""
+PS3="Neovim theme (current: $CURRENT): "
+select selected_theme in "${THEMES[@]}"; do
+  if [[ -n "${selected_theme:-}" ]]; then
+    theme="$selected_theme"
+    break
+  fi
+  echo "Please choose a valid theme number."
+done
 
 mkdir -p "$(dirname "$THEME_FILE")"
 echo "$theme" >"$THEME_FILE"
