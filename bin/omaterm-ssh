@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Add SSH public key for remote access
-# https://github.com/omacom-io/omaterm-lite
+# https://github.com/hattapauzi/omaterm-lite
 
 prompt_confirm() {
   local prompt="$1"

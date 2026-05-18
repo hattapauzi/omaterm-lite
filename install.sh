@@ -346,7 +346,7 @@ if ! command -v git &>/dev/null; then
   esac
 fi
 
-REPO="https://github.com/omacom-io/omaterm-lite.git"
+REPO="https://github.com/hattapauzi/omaterm-lite.git"
 OMATERM_REF="${OMATERM_REF:-master}"
 INSTALLER_DIR="$(mktemp -d)"
 trap 'rm -rf "$INSTALLER_DIR"' EXIT

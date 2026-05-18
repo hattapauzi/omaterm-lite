@@ -11,7 +11,7 @@ A lightweight Omakase terminal setup for Arch/Debian/Ubuntu/Fedora, tuned for se
 ## Install
 
 ```bash
-curl -fsSL https://omaterm.org/install | bash
+curl -fsSL https://raw.githubusercontent.com/hattapauzi/omaterm-lite/master/install.sh | bash
 ```
 
 ## What it sets up
@@ -25,7 +25,7 @@ curl -fsSL https://omaterm.org/install | bash
 ## Docker
 
 ```bash
-docker run -it -v omaterm-lite-home:/home/omaterm-lite ghcr.io/omacom-io/omaterm-lite
+docker run -it -v omaterm-lite-home:/home/omaterm-lite ghcr.io/hattapauzi/omaterm-lite
 ```
 
 The named volume persists your home directory across container restarts, including git config, shell history, and projects.

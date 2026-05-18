@@ -6,5 +6,5 @@ set -euo pipefail
 printf "Refresh Omaterm Lite (including overwriting configs)? [y/N] "
 IFS= read -r reply
 case "${reply,,}" in
-  y|yes) curl -fsSL https://omaterm.org/install | bash ;;
+  y|yes) curl -fsSL https://raw.githubusercontent.com/hattapauzi/omaterm-lite/master/install.sh | bash ;;
 esac
