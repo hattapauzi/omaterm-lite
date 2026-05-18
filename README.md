@@ -11,7 +11,7 @@ A lightweight Omakase terminal setup for Arch/Debian/Ubuntu/Fedora, tuned for se
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hattapauzi/omaterm-lite/master/install.sh | bash
+curl -fsSL https://omaterm.hatta.cc/install | bash
 ```
 
 ## What it sets up
