@@ -22,6 +22,38 @@ curl -fsSL https://omaterm.hatta.cc/install | bash
 - **Networking**: SSH
 - **Git**: Interactive config for user name/email, helpful aliases
 
+## Lite changes
+
+This fork removes packages and setup flows from the upstream Omaterm install that are not needed for a lighter Ubuntu/server-focused environment.
+
+Removed packages/tools:
+
+- `jq`
+- `luarocks`
+- `gum`
+- `gh` / `github-cli`
+- `tailscale`
+- `mise`
+- Ruby via `mise`
+- Node via `mise`
+- `opencode` / `opencode-ai`
+- `claude-code` / `@anthropic-ai/claude-code`
+
+Removed setup flows:
+
+- GitHub CLI authentication prompt
+- Tailscale setup prompt
+- npm-based AI assistant installation
+- `mise` runtime installation for Node and Ruby
+
+Kept intentionally:
+
+- `clang`
+- `llvm`
+- Rust/Cargo equivalents
+
+These are kept for Neovim/LazyVim native tooling, Tree-sitter, Mason-installed tools, and Fedora `eza` fallback support.
+
 ## Docker
 
 ```bash
@@ -29,14 +61,3 @@ docker run -it -v omaterm-lite-home:/home/omaterm-lite ghcr.io/hattapauzi/omater
 ```
 
 The named volume persists your home directory across container restarts, including git config, shell history, and projects.
-
-## Interactive prompts
-
-During installation you'll be asked for:
-
-- Git user name
-- Git email address
-
-And you'll be offered to setup:
-
-- SSH public keys
