@@ -23,7 +23,7 @@ WORKDIR /home/omaterm-lite
 ENV SHELL=/usr/bin/zsh
 
 # Install omadots
-RUN curl -fsSL https://raw.githubusercontent.com/omacom-io/omadots/refs/heads/master/install.sh | bash
+RUN curl -fsSL https://raw.githubusercontent.com/hattapauzi/omadots/main/install.sh | bash
 
 # Copy configs and bins
 COPY --chown=omaterm-lite:omaterm-lite config/ /home/omaterm-lite/.config/
