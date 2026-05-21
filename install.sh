@@ -203,7 +203,7 @@ maybe_reexec_as_non_root() {
 }
 
 install_omadots() {
-  curl -fsSL https://raw.githubusercontent.com/omacom-io/omadots/refs/heads/master/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/hattapauzi/omadots/main/install.sh | bash
 }
 
 install_configs() {
