@@ -16,7 +16,7 @@ curl -fsSL https://omaterm.hatta.cc/install | bash
 
 ## What it sets up
 
-- **Shell**: Bash with starship prompt, fzf, eza, zoxide
+- **Shell**: Zsh with starship prompt, fzf, eza, zoxide (tmux available but not auto-started)
 - **Editors**: Neovim (LazyVim)
 - **Dev tools**: docker, lazygit, lazydocker
 - **Networking**: SSH
@@ -28,8 +28,8 @@ This fork removes packages and setup flows from the upstream Omaterm install tha
 
 Removed packages/tools:
 
+- `tmux` (package still installed; auto-start on shell launch is removed)
 - `jq`
-- `luarocks`
 - `gum`
 - `gh` / `github-cli`
 - `tailscale`
@@ -40,7 +40,7 @@ Removed packages/tools:
 - `claude-code` / `@anthropic-ai/claude-code`
 
 Removed setup flows:
-
+- tmux auto-start on shell launch (enters tmux automatically)
 - GitHub CLI authentication prompt
 - Tailscale setup prompt
 - npm-based AI assistant installation
@@ -61,3 +61,42 @@ docker run -it -v omaterm-lite-home:/home/omaterm-lite ghcr.io/hattapauzi/omater
 ```
 
 The named volume persists your home directory across container restarts, including git config, shell history, and projects.
+
+## Developer Docker testing
+
+Build local images from the current working tree to test uncommitted changes across supported distros:
+
+```bash
+# Arch Linux
+docker build -t omaterm-test-arch -f Dockerfile .
+docker run -it --rm omaterm-test-arch
+
+# Debian
+docker build -t omaterm-test-debian -f Dockerfile.debian .
+docker run -it --rm omaterm-test-debian
+
+# Fedora
+docker build -t omaterm-test-fedora -f Dockerfile.fedora .
+docker run -it --rm omaterm-test-fedora
+```
+
+Use `--rm` to remove the container when you exit. The image remains available and can be reused until you rebuild or remove it.
+
+To persist the test user's home directory between runs, mount a named volume:
+
+```bash
+docker run -it --rm \
+  -v omaterm-test-debian-home:/home/omaterm-lite \
+  omaterm-test-debian
+```
+
+Use the same volume pattern for Arch or Fedora by changing the image and volume names.
+
+The first container startup runs `omaterm-setup`, which may prompt for Git identity setup. Subsequent starts with a persisted home directory skip the setup after `~/.omaterm-setup-done` exists.
+
+Clean up local test images when needed:
+
+```bash
+docker rmi omaterm-test-arch omaterm-test-debian omaterm-test-fedora
+```
+

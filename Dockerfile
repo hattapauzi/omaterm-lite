@@ -30,14 +30,6 @@ COPY --chown=omaterm-lite:omaterm-lite config/ /home/omaterm-lite/.config/
 COPY --chown=omaterm-lite:omaterm-lite bin/ /home/omaterm-lite/.local/bin/
 RUN chmod +x /home/omaterm-lite/.local/bin/*
 
-# Auto-start tmux in .zshrc
-RUN cat >> /home/omaterm-lite/.zshrc <<'EOF'
-
-if [[ -z $TMUX ]]; then
-  t
-fi
-EOF
-
 ENV PATH="/home/omaterm-lite/.local/bin:${PATH}"
 
 ENTRYPOINT ["/home/omaterm-lite/.local/bin/omaterm-setup"]

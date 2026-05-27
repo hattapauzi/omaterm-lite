@@ -1,0 +1,74 @@
+FROM debian:stable
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update system and install Debian packages
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get remove -y containerd.io 2>/dev/null || true && \
+    apt-get install -y --no-install-recommends \
+      build-essential git openssh-server libssl-dev sudo less net-tools whois \
+      zsh fzf eza zoxide tmux btop man-db \
+      vim \
+      clang llvm rustc libyaml-0-2 \
+      curl wget gpg ca-certificates \
+      docker.io docker-compose \
+      kitty-terminfo && \
+    if apt-cache show tealdeer >/dev/null 2>&1; then \
+      apt-get install -y --no-install-recommends tealdeer; \
+    else \
+      apt-get install -y --no-install-recommends tldr; \
+    fi && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install starship
+RUN curl -sS https://starship.rs/install.sh | sh -s -- --yes
+
+# Install lazygit
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+      amd64) binary_arch="x86_64" ;; \
+      arm64) binary_arch="arm64" ;; \
+      *) echo "Unsupported architecture: $arch"; exit 1 ;; \
+    esac; \
+    version="$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep -Po '"tag_name": *"v\K[^"]*')"; \
+    curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/v${version}/lazygit_${version}_linux_${binary_arch}.tar.gz" | tar xz -C /tmp lazygit; \
+    install /tmp/lazygit /usr/local/bin/; \
+    rm -f /tmp/lazygit
+
+# Install lazydocker
+RUN curl -fsSL https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | DIR=/usr/local/bin bash
+
+# Install Neovim stable for LazyVim compatibility
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+      amd64) binary_arch="x86_64" ;; \
+      arm64) binary_arch="arm64" ;; \
+      *) echo "Unsupported architecture: $arch"; exit 1 ;; \
+    esac; \
+    rm -rf "/opt/nvim-linux-${binary_arch}"; \
+    curl -fsSL "https://github.com/neovim/neovim/releases/download/stable/nvim-linux-${binary_arch}.tar.gz" | tar -C /opt -xz; \
+    ln -sfn "/opt/nvim-linux-${binary_arch}/bin/nvim" /usr/local/bin/nvim
+
+# Create a non-root user
+RUN useradd -m -s /usr/bin/zsh omaterm-lite && \
+    echo "omaterm-lite ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/omaterm-lite
+
+USER omaterm-lite
+WORKDIR /home/omaterm-lite
+ENV SHELL=/usr/bin/zsh
+
+# Install omadots
+RUN curl -fsSL https://raw.githubusercontent.com/hattapauzi/omadots/master/install.sh | bash
+
+# Copy configs and bins
+COPY --chown=omaterm-lite:omaterm-lite config/ /home/omaterm-lite/.config/
+COPY --chown=omaterm-lite:omaterm-lite bin/ /home/omaterm-lite/.local/bin/
+RUN chmod +x /home/omaterm-lite/.local/bin/*
+
+ENV PATH="/home/omaterm-lite/.local/bin:${PATH}"
+
+ENTRYPOINT ["/home/omaterm-lite/.local/bin/omaterm-setup"]

@@ -1,0 +1,52 @@
+FROM fedora:latest
+
+# Update system and install Fedora packages
+RUN dnf upgrade -y && \
+    dnf install -y @development-tools \
+      git openssh-server sudo less net-tools whois \
+      zsh fzf zoxide tmux btop man-db tldr \
+      vim neovim \
+      clang llvm rust cargo libyaml \
+      curl wget ca-certificates \
+      kitty-terminfo \
+      dnf-plugins-core && \
+    dnf clean all
+
+# Install starship
+RUN curl -sS https://starship.rs/install.sh | sh -s -- --yes
+
+# Install eza
+RUN cargo install eza
+
+# Install Docker from Docker's official Fedora repo
+RUN dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo && \
+    dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin && \
+    dnf clean all
+
+# Install lazygit via COPR
+RUN dnf copr enable -y atim/lazygit && \
+    dnf install -y lazygit && \
+    dnf clean all
+
+# Install lazydocker
+RUN curl -fsSL https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | DIR=/usr/local/bin bash
+
+# Create a non-root user
+RUN useradd -m -s /usr/bin/zsh omaterm-lite && \
+    echo "omaterm-lite ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/omaterm-lite
+
+USER omaterm-lite
+WORKDIR /home/omaterm-lite
+ENV SHELL=/usr/bin/zsh
+
+# Install omadots
+RUN curl -fsSL https://raw.githubusercontent.com/hattapauzi/omadots/master/install.sh | bash
+
+# Copy configs and bins
+COPY --chown=omaterm-lite:omaterm-lite config/ /home/omaterm-lite/.config/
+COPY --chown=omaterm-lite:omaterm-lite bin/ /home/omaterm-lite/.local/bin/
+RUN chmod +x /home/omaterm-lite/.local/bin/*
+
+ENV PATH="/home/omaterm-lite/.local/bin:${PATH}"
+
+ENTRYPOINT ["/home/omaterm-lite/.local/bin/omaterm-setup"]

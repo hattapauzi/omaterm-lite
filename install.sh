@@ -212,22 +212,6 @@ install_configs() {
   cp -Rf "$INSTALLER_DIR/config/"* "$HOME/.config/"
   echo "✓ Neovim"
   echo "✓ Starship"
-
-  local shell_rc
-  case "$(basename "$SHELL")" in
-  zsh) shell_rc="$HOME/.zshrc" ;;
-  *) shell_rc="$HOME/.bashrc" ;;
-  esac
-
-  if ! grep -qF '[[ -z $TMUX ]]' "$shell_rc" 2>/dev/null; then
-    cat >>"$shell_rc" <<'EOF'
-
-if [[ -z $TMUX ]]; then
-  t
-fi
-EOF
-    echo "✓ Tmux auto-start"
-  fi
 }
 
 install_bins() {
