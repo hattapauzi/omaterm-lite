@@ -24,6 +24,14 @@ ENV SHELL=/usr/bin/zsh
 
 # Install omadots
 RUN curl -fsSL https://raw.githubusercontent.com/hattapauzi/omadots/master/install.sh | bash
+RUN cat >>"$HOME/.zshrc" <<'EOF'
+
+# OMATERM_PLAIN_TERMINAL_BASH: keep direct login terminals plain Bash.
+# tmux sets TMUX, so panes keep the normal Omaterm Zsh environment.
+if [[ -o login && -z ${TMUX:-} && -z ${OMATERM_KEEP_ZSH:-} ]]; then
+  exec bash -l
+fi
+EOF
 
 # Copy configs and bins
 COPY --chown=omaterm-lite:omaterm-lite config/ /home/omaterm-lite/.config/

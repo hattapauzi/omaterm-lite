@@ -212,6 +212,18 @@ install_configs() {
   cp -Rf "$INSTALLER_DIR/config/"* "$HOME/.config/"
   echo "✓ Neovim"
   echo "✓ Starship"
+
+  if ! grep -qF 'OMATERM_PLAIN_TERMINAL_BASH' "$HOME/.zshrc" 2>/dev/null; then
+    cat >>"$HOME/.zshrc" <<'EOF'
+
+# OMATERM_PLAIN_TERMINAL_BASH: keep direct login terminals plain Bash.
+# tmux sets TMUX, so panes keep the normal Omaterm Zsh environment.
+if [[ -o login && -z ${TMUX:-} && -z ${OMATERM_KEEP_ZSH:-} ]]; then
+  exec bash -l
+fi
+EOF
+    echo "✓ Plain terminal Bash startup"
+  fi
 }
 
 install_bins() {
