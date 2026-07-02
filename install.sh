@@ -188,7 +188,7 @@ maybe_reexec_as_non_root() {
   section "Restarting installer as $target_user..."
   chmod -R a+rX "$installer_dir"
 
-  if sudo -iu "$target_user" env OMATERM_REF="$OMATERM_REF" bash "$installer_dir/install.sh"; then
+  if sudo -iu "$target_user" env OMATERM_REF="$OMATERM_REF" OMATERM_PROFILE="${OMATERM_PROFILE:-}" bash "$installer_dir/install.sh"; then
     echo
     echo "Omaterm Lite installed for $target_user. You're back at the root shell."
     echo "To start using Omaterm Lite, either log out and log back in as $target_user, or run:"
@@ -262,6 +262,50 @@ setup_docker_group() {
   fi
 }
 
+is_desktop() {
+  # Xorg / X classic display servers
+  command -v Xorg >/dev/null 2>&1 && return 0
+  command -v X >/dev/null 2>&1 && return 0
+  command -v startx >/dev/null 2>&1 && return 0
+
+  # Generic *-session entry points (GNOME, Cinnamon, MATE, LXQt, XFCE ...)
+  local s
+  for s in /usr/bin/*-session; do
+    [ -e "$s" ] && return 0
+  done
+
+  # Wayland compositors + KDE Plasma entry points (don't follow the *-session pattern)
+  local c
+  for c in sway weston hyprland wayfire river labwc kwin_wayland mutter gnome-shell startplasma plasmashell; do
+    command -v "$c" >/dev/null 2>&1 && return 0
+  done
+
+  return 1
+}
+
+# OMATERM_PROFILE=desktop|server overrides auto-detection (used by CI/Docker).
+resolve_profile() {
+  section "Detecting profile..."
+  case "${OMATERM_PROFILE:-}" in
+    desktop | server) ;;
+    "")
+      if is_desktop; then
+        OMATERM_PROFILE=desktop
+      else
+        OMATERM_PROFILE=server
+      fi
+      ;;
+    *)
+      echo "Error: invalid OMATERM_PROFILE='${OMATERM_PROFILE:-}' (use 'desktop' or 'server')" >&2
+      exit 1
+      ;;
+  esac
+
+  mkdir -p "$HOME/.config/omaterm"
+  echo "$OMATERM_PROFILE" >"$HOME/.config/omaterm/profile"
+  echo "✓ Profile: $OMATERM_PROFILE (shell stays login-mode adaptive; sshd follows profile)"
+}
+
 interactive_setup() {
   section "Interactive setup..."
 
@@ -294,6 +338,8 @@ configure_parallel_builds() {
 }
 
 run_installation() {
+  resolve_profile
+
   # Use all cores for compilation
   configure_parallel_builds
 

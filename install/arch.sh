@@ -1,7 +1,7 @@
 install_packages() {
   local official_pkgs=(
     base-devel git openssh sudo less inetutils whois
-    zsh starship fzf eza zoxide tmux btop man-db tldr
+    zsh starship fzf ripgrep eza zoxide tmux btop man-db tldr
     vim neovim
     clang llvm rust libyaml
     lazygit lazydocker
@@ -33,6 +33,8 @@ enable_services() {
   sudo systemctl start --no-block docker.service
   echo "✓ Docker"
 
-  sudo systemctl enable --now sshd.service
-  echo "✓ sshd"
+  if [ "${OMATERM_PROFILE:-server}" = "server" ]; then
+    sudo systemctl enable --now sshd.service
+    echo "✓ sshd"
+  fi
 }

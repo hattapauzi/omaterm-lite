@@ -18,7 +18,7 @@ install_packages() {
   sudo apt-get remove -y containerd.io 2>/dev/null || true
   sudo apt-get install -y \
     build-essential git openssh-server libssl-dev sudo less net-tools whois \
-    zsh fzf eza zoxide tmux btop man-db \
+    zsh fzf ripgrep eza zoxide tmux btop man-db \
     vim \
     clang llvm rustc libyaml-0-2 \
     curl wget gpg \
@@ -82,6 +82,8 @@ enable_services() {
   sudo systemctl start --no-block docker.service
   echo "✓ Docker"
 
-  sudo systemctl enable --now ssh.service
-  echo "✓ sshd"
+  if [ "${OMATERM_PROFILE:-server}" = "server" ]; then
+    sudo systemctl enable --now ssh.service
+    echo "✓ sshd"
+  fi
 }
