@@ -2,9 +2,12 @@ install_packages() {
   local DEB_ARCH BINARY_ARCH
   DEB_ARCH="$(dpkg --print-architecture)"
   case "$DEB_ARCH" in
-    amd64) BINARY_ARCH="x86_64" ;;
-    arm64) BINARY_ARCH="arm64" ;;
-    *) echo "Unsupported architecture: $DEB_ARCH"; return 1 ;;
+  amd64) BINARY_ARCH="x86_64" ;;
+  arm64) BINARY_ARCH="arm64" ;;
+  *)
+    echo "Unsupported architecture: $DEB_ARCH"
+    return 1
+    ;;
   esac
 
   section "Updating system packages..."
@@ -19,7 +22,7 @@ install_packages() {
     vim \
     clang llvm rustc libyaml-0-2 \
     curl wget gpg \
-    docker.io docker-compose \
+    docker.io docker-compose-v2 \
     kitty-terminfo
 
   # Neovim from Debian/Ubuntu repos is too old for LazyVim. Use the official stable build when needed.

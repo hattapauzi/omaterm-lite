@@ -22,6 +22,11 @@ USER omaterm-lite
 WORKDIR /home/omaterm-lite
 ENV SHELL=/usr/bin/zsh
 
+# Install yay
+RUN git clone https://aur.archlinux.org/yay-bin.git /tmp/yay && \
+    cd /tmp/yay && makepkg -si --noconfirm && \
+    rm -rf /tmp/yay
+
 # Install omadots
 RUN curl -fsSL https://raw.githubusercontent.com/hattapauzi/omadots/master/install.sh | bash
 RUN cat >>"$HOME/.zshrc" <<'EOF'
