@@ -1,0 +1,489 @@
+# Hatta personal Zsh configuration (omaterm-lite Hatta mode)
+# Single-file persona: OMZ + Powerlevel10k + Forge, with inlined options,
+# aliases, functions, and tool init. No separate shell/ file split.
+
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may be below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# Environment
+export EDITOR="nvim"
+export PATH="$PATH:$HOME/.local/bin"
+
+# If not running interactively, don't do anything
+[[ $- != *i* ]] && return
+
+# Qt/GTK theming for consistent dark theme
+export QT_QPA_PLATFORMTHEME=gtk3
+export GTK_THEME=catppuccin-mocha-rosewater-standard+default:dark
+
+# ─── Zsh options, keybindings, completion ─────────────────────────────────────
+# Use emacs key bindings
+bindkey -e
+
+# Meta/UTF-8 settings
+setopt COMBINING_CHARS
+
+# Case-insensitive completion
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=* l:|=*'
+
+# Show all completions immediately without needing to press tab twice
+setopt MENU_COMPLETE
+setopt AUTO_MENU
+
+# Arrow keys: history search matching current input
+bindkey "^[[A" history-search-backward
+bindkey "^[[B" history-search-forward
+bindkey "^[[C" forward-char
+bindkey "^[[D" backward-char
+
+# Mark symlinked directories (add trailing slash)
+setopt CHASE_LINKS
+
+# Do not autocomplete hidden files unless explicitly starting with dot
+zstyle ':completion:*' match-hidden-files off
+
+# Show all completions at once (no paging)
+zstyle ':completion:*' list-prompt ''
+zstyle ':completion:*' select-prompt ''
+
+# Show extra file information when completing (like ls -F)
+zstyle ':completion:*' file-list all
+
+# Smart completion - look at text after cursor
+setopt COMPLETE_IN_WORD
+setopt ALWAYS_TO_END
+
+# Colored completion listings
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+
+# Share history between sessions
+setopt SHARE_HISTORY
+# Append to history file, don't overwrite
+setopt APPEND_HISTORY
+# Don't record duplicate commands
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+# Remove superfluous blanks before recording
+setopt HIST_REDUCE_BLANKS
+# Don't execute immediately upon history expansion
+setopt HIST_VERIFY
+# Extended globbing
+setopt EXTENDED_GLOB
+# Don't beep on errors
+unsetopt BEEP
+# Allow comments in interactive shells
+setopt INTERACTIVE_COMMENTS
+# Change directory by typing directory name
+setopt AUTO_CD
+
+# ─── Tool init ────────────────────────────────────────────────────────────────
+
+if command -v mise &>/dev/null; then
+  eval "$(mise activate zsh)"
+fi
+
+if command -v zoxide &>/dev/null; then
+  eval "$(zoxide init zsh)"
+fi
+
+if command -v try &>/dev/null; then
+  eval "$(try init ~/Work/tries)"
+fi
+
+if command -v fzf &>/dev/null; then
+  if [[ -f /usr/share/fzf/completion.zsh ]]; then
+    source /usr/share/fzf/completion.zsh
+  fi
+  if [[ -f /usr/share/fzf/key-bindings.zsh ]]; then
+    source /usr/share/fzf/key-bindings.zsh
+  fi
+fi
+
+# ─── Aliases ──────────────────────────────────────────────────────────────────
+
+# Eza (https://eza.rocks/)
+alias ls='eza -lh --group-directories-first --icons=auto'
+alias lsa='ls -a'
+
+# Fuzzy find (https://junegunn.github.io/fzf/)
+alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
+alias eff='$EDITOR "$(ff)"'
+
+# Smart cd (https://github.com/ajeetdsouza/zoxide)
+alias cd="zd"
+zd() {
+  if [[ $# -eq 0 ]]; then
+    builtin cd ~ && return
+  elif [[ -d $1 ]]; then
+    builtin cd "$1"
+  else
+    z "$@" && printf "%s " "->" && pwd || echo "Error: Directory not found"
+  fi
+}
+
+# Directories
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# Tools
+alias c='opencode'
+alias d='docker'
+alias lzd='lazydocker'
+command -v rails &>/dev/null && alias r='rails'
+alias v='vim'
+alias t='tmux attach || tmux new -s Work'
+command -v tdl &>/dev/null && alias ic='tdl c'
+command -v tdl &>/dev/null && alias ix='tdl cx'
+command -v tdl &>/dev/null && alias icx='tdl c cx'
+n() { if [[ $# -eq 0 ]]; then nvim .; else nvim "$@"; fi; }
+
+# Git
+alias g='git'
+alias gcm='git commit -m'
+alias gcam='git commit -a -m'
+
+# ─── Functions ────────────────────────────────────────────────────────────────
+
+# Write iso file to sd card
+iso2sd() {
+  if (( $# < 1 )); then
+    echo "Usage: iso2sd <input_file> [output_device]"
+    echo "Example: iso2sd ~/Downloads/ubuntu-25.04-desktop-amd64.iso /dev/sda"
+    return 1
+  fi
+
+  local iso="$1"
+  local drive="$2"
+
+  if [[ -z $drive ]]; then
+    echo "No drive selected"
+    return 1
+  fi
+
+  sudo dd bs=4M status=progress oflag=sync if="$iso" of="$drive"
+  sudo eject "$drive"
+}
+
+# Format an entire drive for a single partition using exFAT
+format-drive() {
+  if (( $# != 2 )); then
+    echo "Usage: format-drive <device> <name>"
+    echo "Example: format-drive /dev/sda 'My Stuff'"
+    echo -e "\nAvailable drives:"
+    lsblk -d -o NAME -n | awk '{print "/dev/"$1}'
+  else
+    echo "WARNING: This will completely erase all data on $1 and label it '$2'."
+    read -rp "Are you sure you want to continue? (y/N): " confirm
+
+    if [[ $confirm =~ ^[Yy]$ ]]; then
+      sudo wipefs -a "$1"
+      sudo dd if=/dev/zero of="$1" bs=1M count=100 status=progress
+      sudo parted -s "$1" mklabel gpt
+      sudo parted -s "$1" mkpart primary 1MiB 100%
+      sudo parted -s "$1" set 1 msftdata on
+
+      partition="$([[ $1 == *"nvme"* ]] && echo "${1}p1" || echo "${1}1")"
+      sudo partprobe "$1" || true
+      sudo udevadm settle || true
+
+      sudo mkfs.exfat -n "$2" "$partition"
+
+      echo "Drive $1 formatted as exFAT and labeled '$2'."
+    fi
+  fi
+}
+
+# Transcode a video to a good-balance 1080p that's great for sharing online
+transcode-video-1080p() {
+  ffmpeg -i "$1" -vf scale=1920:1080 -c:v libx264 -preset fast -crf 23 -c:a copy "${1%.*}-1080p.mp4"
+}
+
+# Transcode a video to a good-balance 4K that's great for sharing online
+transcode-video-4K() {
+  ffmpeg -i "$1" -c:v libx265 -preset slow -crf 24 -c:a aac -b:a 192k "${1%.*}-optimized.mp4"
+}
+
+# Transcode any image to JPG image that's great for shrinking wallpapers
+img2jpg() {
+  img="$1"
+  shift
+
+  magick "$img" "$@" -quality 95 -strip "${img%.*}-converted.jpg"
+}
+
+# Transcode any image to a small JPG (max 1080px wide) that's great for sharing online
+img2jpg-small() {
+  img="$1"
+  shift
+
+  magick "$img" "$@" -resize 1080x\> -quality 95 -strip "${img%.*}-small.jpg"
+}
+
+# Transcode any image to a medium JPG (max 1800px wide) that's great for sharing online
+img2jpg-medium() {
+  img="$1"
+  shift
+
+  magick "$img" "$@" -resize 1800x\> -quality 95 -strip "${img%.*}-medium.jpg"
+}
+
+# Transcode any image to compressed-but-lossless PNG
+img2png() {
+  img="$1"
+  shift
+
+  magick "$img" "$@" -strip -define png:compression-filter=5 \
+    -define png:compression-level=9 \
+    -define png:compression-strategy=1 \
+    -define png:exclude-chunk=all \
+    "${img%.*}-optimized.png"
+}
+
+# SSH Port Forwarding Functions
+fip() {
+  (( $# < 2 )) && echo "Usage: fip <host> <port1> [port2] ..." && return 1
+  local host="$1"
+  shift
+  for port in "$@"; do
+    ssh -f -N -L "$port:localhost:$port" "$host" && echo "Forwarding localhost:$port -> $host:$port"
+  done
+}
+
+dip() {
+  (( $# == 0 )) && echo "Usage: dip <port1> [port2] ..." && return 1
+  for port in "$@"; do
+    pkill -f "ssh.*-L $port:localhost:$port" && echo "Stopped forwarding port $port" || echo "No forwarding on port $port"
+  done
+}
+
+lip() {
+  pgrep -af "ssh.*-L [0-9]+:localhost:[0-9]+" || echo "No active forwards"
+}
+
+# Create a Tmux Dev Layout with editor, ai, and terminal
+# Usage: tdl <c|cx|codex|other_ai> [<second_ai>]
+tdl() {
+  [[ -z $1 ]] && { echo "Usage: tdl <c|cx|codex|other_ai> [<second_ai>]"; return 1; }
+  [[ -z $TMUX ]] && { echo "You must start tmux to use tdl."; return 1; }
+
+  local current_dir="${PWD}"
+  local editor_pane ai_pane ai2_pane
+  local ai="$1"
+  local ai2="$2"
+
+  # Use TMUX_PANE for the pane we're running in (stable even if active window changes)
+  editor_pane="$TMUX_PANE"
+
+  # Name the current window after the base directory name
+  tmux rename-window -t "$editor_pane" "$(basename "$current_dir")"
+
+  # Split window vertically - top 85%, bottom 15% (target editor pane explicitly)
+  tmux split-window -v -p 15 -t "$editor_pane" -c "$current_dir"
+
+  # Split editor pane horizontally - AI on right 30% (capture new pane ID directly)
+  ai_pane=$(tmux split-window -h -p 30 -t "$editor_pane" -c "$current_dir" -P -F '#{pane_id}')
+
+  # If second AI provided, split the AI pane vertically
+  if [[ -n $ai2 ]]; then
+    ai2_pane=$(tmux split-window -v -t "$ai_pane" -c "$current_dir" -P -F '#{pane_id}')
+    tmux send-keys -t "$ai2_pane" "$ai2" C-m
+  fi
+
+  # Run ai in the right pane
+  tmux send-keys -t "$ai_pane" "$ai" C-m
+
+  # Run nvim in the left pane
+  tmux send-keys -t "$editor_pane" "$EDITOR ." C-m
+
+  # Select the nvim pane for focus
+  tmux select-pane -t "$editor_pane"
+}
+
+# Create multiple tdl windows with one per subdirectory in the current directory
+# Usage: tdlm <c|cx|codex|other_ai> [<second_ai>]
+tdlm() {
+  [[ -z $1 ]] && { echo "Usage: tdlm <c|cx|codex|other_ai> [<second_ai>]"; return 1; }
+  [[ -z $TMUX ]] && { echo "You must start tmux to use tdlm."; return 1; }
+
+  local ai="$1"
+  local ai2="$2"
+  local base_dir="$PWD"
+  local first=true
+
+  # Rename the session to the current directory name (replace dots/colons which tmux disallows)
+  tmux rename-session "$(basename "$base_dir" | tr '.:' '--')"
+
+  for dir in "$base_dir"/*/; do
+    [[ -d $dir ]] || continue
+    local dirpath="${dir%/}"
+
+    if $first; then
+      # Reuse the current window for the first project
+      tmux send-keys -t "$TMUX_PANE" "cd '$dirpath' && tdl $ai $ai2" C-m
+      first=false
+    else
+      local pane_id=$(tmux new-window -c "$dirpath" -P -F '#{pane_id}')
+      tmux send-keys -t "$pane_id" "tdl $ai $ai2" C-m
+    fi
+  done
+}
+
+# Create a multi-pane swarm layout with the same command started in each pane (great for AI)
+# Usage: tsl <pane_count> <command>
+tsl() {
+  [[ -z $1 || -z $2 ]] && { echo "Usage: tsl <pane_count> <command>"; return 1; }
+  [[ -z $TMUX ]] && { echo "You must start tmux to use tsl."; return 1; }
+
+  local count="$1"
+  local cmd="$2"
+  local current_dir="${PWD}"
+  local -a panes
+
+  tmux rename-window -t "$TMUX_PANE" "$(basename "$current_dir")"
+
+  panes+=("$TMUX_PANE")
+
+  while (( ${#panes[@]} < count )); do
+    local new_pane
+    local split_target="${panes[-1]}"
+    new_pane=$(tmux split-window -h -t "$split_target" -c "$current_dir" -P -F '#{pane_id}')
+    panes+=("$new_pane")
+    tmux select-layout -t "${panes[0]}" tiled
+  done
+
+  for pane in "${panes[@]}"; do
+    tmux send-keys -t "$pane" "$cmd" C-m
+  done
+
+  tmux select-pane -t "${panes[0]}"
+}
+
+# Create a new worktree and branch from within current git directory.
+gawt() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: gawt [branch name]"
+    return 1
+  fi
+
+  local branch="$1"
+  local base="$(basename "$PWD")"
+  local path="../${base}--${branch}"
+
+  git worktree add -b "$branch" "$path"
+  mise trust "$path"
+  cd "$path"
+}
+
+# Remove worktree and branch from within active worktree directory.
+gdwt() {
+  if gum confirm "Remove worktree and branch?"; then
+    local cwd base branch root worktree
+
+    cwd="$(pwd)"
+    worktree="$(basename "$cwd")"
+
+    # split on first `--`
+    root="${worktree%%--*}"
+    branch="${worktree#*--}"
+
+    # Protect against accidentally nuking a non-worktree directory
+    if [[ "$root" != "$worktree" ]]; then
+      cd "../$root"
+      git worktree remove "$cwd" --force || return 1
+      git branch -D "$branch"
+    fi
+  fi
+}
+
+# Set git user.name and user.email
+git-id() {
+  git config --global user.name "$(gum input --placeholder 'Name' --header 'Git name')"
+  git config --global user.email "$(gum input --placeholder 'Email' --header 'Git email')"
+}
+
+# Quick upload file to self hosting temporary file server
+upload0x0() {
+  local file="$1"
+  [[ -f "$file" ]] || {
+    echo "File not found: $file" >&2
+    return 1
+  }
+  curl -fsS -F "file=@$file" https://file.hatta.cc | wl-copy
+}
+
+# ─── Oh My Zsh ───────────────────────────────────────────────────────────────
+
+# Path to your Oh My Zsh installation.
+export ZSH="$HOME/.oh-my-zsh"
+
+# Set name of the theme to load
+ZSH_THEME="powerlevel10k/powerlevel10k"
+
+# Required plugins for non-interactive detection (before early return)
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+
+source $ZSH/oh-my-zsh.sh
+
+# ─── Forge ───────────────────────────────────────────────────────────────────
+
+# >>> forge initialize >>>
+# !! Contents within this block are managed by 'forge zsh setup' !!
+# !! Do not edit manually - changes will be overwritten !!
+
+# Add required zsh plugins if not already present
+if [[ ! " ${plugins[@]} " =~ " zsh-autosuggestions " ]]; then
+    plugins+=(zsh-autosuggestions)
+fi
+if [[ ! " ${plugins[@]} " =~ " zsh-syntax-highlighting " ]]; then
+    plugins+=(zsh-syntax-highlighting)
+fi
+
+# Load forge shell plugin (commands, completions, keybindings) if not already loaded
+if [[ -z "$_FORGE_PLUGIN_LOADED" ]]; then
+    eval "$(forge zsh plugin)"
+fi
+
+# Load forge shell theme (prompt with AI context) if not already loaded
+if [[ -z "$_FORGE_THEME_LOADED" ]]; then
+    eval "$(forge zsh theme)"
+fi
+# <<< forge initialize <<<
+
+# ─── Powerlevel10k ────────────────────────────────────────────────────────────
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# Re-evaluate p10k prompt segments (including forge_code) after forge actions
+# like :model, :commands, :reasoning-effort, etc. Without this, the model and
+# token count don't update until the next ENTER (precmd cycle).
+#
+# We schedule the prompt rebuild via p10k's own _p9k_restore_prompt mechanism
+# (a zle -F file-descriptor watch on /dev/null) rather than calling
+# _p9k_set_prompt inline. The scheduled callback runs AFTER the current
+# widget returns, when zle is in a clean state. This avoids screen artifacts
+# (stray "%" markers, blank lines) caused by rebuilding the prompt while
+# the terminal cursor is in an intermediate position (below action output).
+#
+# The inline `zle -I` + `zle reset-prompt` handles immediate screen clearing;
+# the scheduled _p9k_restore_prompt handles the full segment re-evaluation.
+if (( $+functions[_forge_reset] && $+functions[_p9k_restore_prompt] )); then
+  functions[_forge_reset]='
+    local pad="${BUFFERLINES:-1}" _i
+    for ((_i=1; _i<pad; _i++)); do print; done
+    BUFFER=""
+    CURSOR=0
+    zle -I
+    zle reset-prompt
+    _p9k__must_restore_prompt=1
+    if (( ! _p9k__restore_prompt_fd )); then
+      sysopen -o cloexec -ru _p9k__restore_prompt_fd /dev/null
+      zle -F $_p9k__restore_prompt_fd _p9k_restore_prompt
+    fi
+  '
+fi

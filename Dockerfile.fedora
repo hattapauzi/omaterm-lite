@@ -38,22 +38,13 @@ RUN useradd -m -s /usr/bin/zsh omaterm-lite && \
 USER omaterm-lite
 WORKDIR /home/omaterm-lite
 ENV SHELL=/usr/bin/zsh
+ENV TERM=dumb
 
-# Install omadots
-RUN curl -fsSL https://raw.githubusercontent.com/hattapauzi/omadots/master/install.sh | bash
-RUN cat >>"$HOME/.zshrc" <<'EOF'
-
-# OMATERM_PLAIN_TERMINAL_BASH: keep direct login terminals plain Bash.
-# tmux sets TMUX, so panes keep the normal Omaterm Zsh environment.
-if [[ -o login && -z ${TMUX:-} && -z ${OMATERM_KEEP_ZSH:-} ]]; then
-  exec bash -l
-fi
-EOF
-
-# Copy configs and bins
-COPY --chown=omaterm-lite:omaterm-lite config/ /home/omaterm-lite/.config/
-COPY --chown=omaterm-lite:omaterm-lite bin/ /home/omaterm-lite/.local/bin/
-RUN chmod +x /home/omaterm-lite/.local/bin/*
+# Copy local repo and run installer (lite flavor, server profile for non-interactive CI)
+COPY --chown=omaterm-lite:omaterm-lite . /tmp/omaterm-lite
+RUN OMATERM_INSTALLER_DIR=/tmp/omaterm-lite OMATERM_PROFILE=server OMATERM_FLAVOR=lite \
+      bash /tmp/omaterm-lite/install.sh && \
+    rm -rf /tmp/omaterm-lite
 
 ENV PATH="/home/omaterm-lite/.local/bin:${PATH}"
 

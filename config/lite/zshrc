@@ -1,0 +1,14 @@
+# If not running interactively, don't do anything (leave this at the top of this file)
+[[ $- != *i* ]] && return
+
+# Load zsh options, keybindings, and completion
+source ~/.config/shell/zoptions
+
+# Load shared shell configuration (aliases, functions, environment, tool init)
+source ~/.config/shell/all
+
+# OMATERM_PLAIN_TERMINAL_BASH: keep direct login terminals plain Bash.
+# tmux sets TMUX, so panes keep the normal Omaterm Zsh environment.
+if [[ -o login && -z ${TMUX:-} && -z ${OMATERM_KEEP_ZSH:-} ]]; then
+  exec bash -l
+fi

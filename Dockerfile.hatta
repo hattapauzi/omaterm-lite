@@ -1,0 +1,31 @@
+FROM omaterm-test-arch
+
+# Install fontconfig (needed for NerdFont detection in Hatta mode)
+RUN sudo pacman -S --needed --noconfirm fontconfig && sudo pacman -Scc --noconfirm
+
+# Copy local repo and run installer (Hatta flavor, desktop profile)
+COPY --chown=omaterm-lite:omaterm-lite . /tmp/omaterm-lite
+RUN OMATERM_INSTALLER_DIR=/tmp/omaterm-lite OMATERM_PROFILE=desktop OMATERM_FLAVOR=hatta \
+      bash /tmp/omaterm-lite/install.sh && \
+    rm -rf /tmp/omaterm-lite
+
+# Verify Hatta mode installed correctly
+RUN test -d "$HOME/.oh-my-zsh" && echo "✓ OMZ installed" && \
+    test -d "$HOME/.oh-my-zsh/custom/themes/powerlevel10k" && echo "✓ p10k theme" && \
+    test -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" && echo "✓ zsh-autosuggestions" && \
+    test -d "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" && echo "✓ zsh-syntax-highlighting" && \
+    test -f "$HOME/.p10k.zsh" && echo "✓ .p10k.zsh" && \
+    test -f "$HOME/.zshrc" && echo "✓ .zshrc" && \
+    test -f "$HOME/.zprofile" && echo "✓ .zprofile" && \
+    ! grep -q '\. ~/.zshrc' "$HOME/.zprofile" && echo "✓ .zprofile does not source .zshrc (Fix#1)" && \
+    test -f "$HOME/.local/bin/forge" && echo "✓ forge installed" && \
+    test ! -f "$HOME/.config/starship.toml" && echo "✓ starship.toml NOT installed (Hatta path)" && \
+    test -d "$HOME/.config/nvim/lua" && echo "✓ nvim config present" && \
+    test -d "$HOME/.config/lazygit" && echo "✓ lazygit config present" && \
+    ! grep -qi 'starship' "$HOME/.zshrc" && echo "✓ no starship init in .zshrc" && \
+    grep -q 'powerlevel10k' "$HOME/.zshrc" && echo "✓ p10k theme in .zshrc" && \
+    grep -q 'forge zsh plugin' "$HOME/.zshrc" && echo "✓ forge plugin in .zshrc" && \
+    grep -q '_forge_reset' "$HOME/.zshrc" && echo "✓ _forge_reset override (Fix#2)" && \
+    echo "ALL HATTA CHECKS PASSED"
+
+ENTRYPOINT ["/home/omaterm-lite/.local/bin/omaterm-setup"]

@@ -29,6 +29,11 @@ install_npm_tools() {
 enable_services() {
   section "Enabling services..."
 
+  if ! is_systemd; then
+    echo "⚠ systemd not running — skipping service enabling"
+    return
+  fi
+
   sudo systemctl enable docker.service
   sudo systemctl start --no-block docker.service
   echo "✓ Docker"

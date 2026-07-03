@@ -1,0 +1,7 @@
+# .zprofile is intentionally empty.
+# Previously sourced ~/.zshrc here, which caused .zshrc to run twice in login
+# shells (e.g. inside tmux). That double-load let fzf rebind Tab after forge
+# had already bound it, breaking the ":" sentinel completion in tmux.
+# ~/.zshrc is sourced automatically by zsh for interactive shells.
+# If environment variables are needed for non-interactive login shells (cron,
+# SSH commands), put them directly in this file (not by sourcing .zshrc).

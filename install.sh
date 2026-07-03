@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Common functions for Omaterm Lite installation
 show_banner() {
-  clear
+  clear 2>/dev/null || true
   echo
   echo " ▄██████▄    ▄▄▄▄███▄▄▄▄      ▄████████     ███        ▄████████    ▄████████   ▄▄▄▄███▄▄▄▄  
 ███    ███ ▄██▀▀▀███▀▀▀██▄   ███    ███ ▀█████████▄   ███    ███   ███    ███ ▄██▀▀▀███▀▀▀██▄
@@ -63,6 +63,18 @@ prompt_confirm() {
     *) echo "Please answer yes or no." >/dev/tty ;;
     esac
   done
+}
+
+backup_file() {
+  local target="$1"
+  if [ -e "$target" ]; then
+    cp -a "$target" "${target}.bak.$(date +%Y%m%d%H%M%S)"
+    echo "✓ Backed up $(basename "$target")"
+  fi
+}
+
+is_systemd() {
+  [ "$(ps -p 1 -o comm= 2>/dev/null | tr -d ' ')" = "systemd" ]
 }
 
 default_install_user() {
@@ -202,28 +214,116 @@ maybe_reexec_as_non_root() {
   fi
 }
 
-install_omadots() {
-  curl -fsSL https://raw.githubusercontent.com/hattapauzi/omadots/master/install.sh | bash
+install_oh_my_zsh() {
+  section "Installing Oh My Zsh..."
+  if [ -d "$HOME/.oh-my-zsh" ]; then
+    echo "✓ Oh My Zsh already installed"
+    return
+  fi
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+}
+
+install_omz_plugins() {
+  section "Installing OMZ plugins..."
+
+  local zsh_custom="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+
+  clone_unless() {
+    local url="$1" dest="$2"
+    [ -d "$dest" ] || git clone --depth=1 "$url" "$dest"
+  }
+
+  clone_unless https://github.com/romkatv/powerlevel10k.git \
+    "$zsh_custom/themes/powerlevel10k"
+  clone_unless https://github.com/zsh-users/zsh-autosuggestions \
+    "$zsh_custom/plugins/zsh-autosuggestions"
+  clone_unless https://github.com/zsh-users/zsh-syntax-highlighting \
+    "$zsh_custom/plugins/zsh-syntax-highlighting"
+
+  echo "✓ Powerlevel10k theme + zsh-autosuggestions + zsh-syntax-highlighting"
+}
+
+install_forge() {
+  if command -v forge &>/dev/null; then
+    echo "✓ Forge already installed"
+    return
+  fi
+  section "Installing Forge..."
+  curl -fsSL https://forgecode.dev/cli | sh
+}
+
+check_nerdfont() {
+  if command -v fc-list &>/dev/null && ! fc-list 2>/dev/null | grep -qi nerd; then
+    echo
+    echo "⚠ No NerdFont detected on the system."
+    echo "  Powerlevel10k needs one for icons and prompt segments."
+    echo "  Install one (e.g. ttf-hack-nerdfont on Arch, or download from nerdfonts.com)"
+    echo "  then set it as your terminal's font."
+  fi
+}
+
+install_hatta_shell() {
+  install_oh_my_zsh
+  export ZSH="$HOME/.oh-my-zsh"
+  install_omz_plugins
+  install_forge
+
+  section "Dropping Hatta configs..."
+  backup_file "$HOME/.zshrc"
+  backup_file "$HOME/.p10k.zsh"
+  backup_file "$HOME/.zprofile"
+
+  cp -f "$INSTALLER_DIR/config/hatta/zshrc" "$HOME/.zshrc"
+  cp -f "$INSTALLER_DIR/config/hatta/p10k.zsh" "$HOME/.p10k.zsh"
+  cat >"$HOME/.zprofile" <<'EOF'
+# .zprofile is intentionally empty.
+# Previously sourced ~/.zshrc here, which caused .zshrc to run twice in login
+# shells (e.g. inside tmux). That double-load let fzf rebind Tab after forge
+# had already bound it, breaking the ":" sentinel completion in tmux.
+# ~/.zshrc is sourced automatically by zsh for interactive shells.
+EOF
+
+  echo "✓ Hatta .zshrc + .p10k.zsh + .zprofile"
+
+  check_nerdfont
 }
 
 install_configs() {
   section "Installing configs..."
   mkdir -p "$HOME/.config"
-  cp -Rf "$INSTALLER_DIR/config/"* "$HOME/.config/"
+  backup_file "$HOME/.config/nvim"
+  backup_file "$HOME/.config/lazygit"
+  cp -Rf "$INSTALLER_DIR/config/nvim" "$HOME/.config/"
+  cp -Rf "$INSTALLER_DIR/config/lazygit" "$HOME/.config/"
   echo "✓ Neovim"
-  echo "✓ Starship"
+  echo "✓ Lazygit"
 
-  if ! grep -qF 'OMATERM_PLAIN_TERMINAL_BASH' "$HOME/.zshrc" 2>/dev/null; then
-    cat >>"$HOME/.zshrc" <<'EOF'
+  case "$OMATERM_FLAVOR" in
+  lite)
+    backup_file "$HOME/.config/starship.toml"
+    cp -f "$INSTALLER_DIR/config/starship.toml" "$HOME/.config/"
+    echo "✓ Starship"
 
-# OMATERM_PLAIN_TERMINAL_BASH: keep direct login terminals plain Bash.
-# tmux sets TMUX, so panes keep the normal Omaterm Zsh environment.
-if [[ -o login && -z ${TMUX:-} && -z ${OMATERM_KEEP_ZSH:-} ]]; then
-  exec bash -l
-fi
-EOF
-    echo "✓ Plain terminal Bash startup"
-  fi
+    if [ -d "$HOME/.config/shell" ] && [ -n "$(ls -A "$HOME/.config/shell" 2>/dev/null)" ]; then
+      backup_file "$HOME/.config/shell"
+    fi
+    mkdir -p "$HOME/.config/shell"
+    cp -Rf "$INSTALLER_DIR/config/shell/"* "$HOME/.config/shell/"
+    echo "✓ Shell config"
+
+    backup_file "$HOME/.zshrc"
+    cp -f "$INSTALLER_DIR/config/lite/zshrc" "$HOME/.zshrc"
+    backup_file "$HOME/.zprofile"
+    cp -f "$INSTALLER_DIR/config/lite/zprofile" "$HOME/.zprofile"
+    echo "✓ Zsh config"
+    ;;
+  hatta)
+    # Hatta drops starship; p10k (via OMZ) owns the prompt.
+    backup_file "$HOME/.config/starship.toml"
+    rm -f "$HOME/.config/starship.toml"
+    # Hatta's shell persona (OMZ + p10k + forge) is installed separately.
+    ;;
+  esac
 }
 
 install_bins() {
@@ -253,11 +353,12 @@ configure_shell() {
 }
 
 setup_docker_group() {
-  if ! groups | grep -q docker; then
+  local current_user="${USER:-$(id -un)}"
+  if ! groups "$current_user" | grep -q docker; then
     if command -v usermod &>/dev/null; then
-      sudo usermod -aG docker "$USER"
+      sudo usermod -aG docker "$current_user"
     else
-      sudo adduser "$USER" docker
+      sudo adduser "$current_user" docker
     fi
   fi
 }
@@ -306,6 +407,45 @@ resolve_profile() {
   echo "✓ Profile: $OMATERM_PROFILE (shell stays login-mode adaptive; sshd follows profile)"
 }
 
+# OMATERM_FLAVOR=hatta|lite selects shell persona (desktop only; server forces lite).
+resolve_flavor() {
+  mkdir -p "$HOME/.config/omaterm"
+
+  # Server profile never offers Hatta mode — keeps current behavior unchanged.
+  if [ "$OMATERM_PROFILE" = "server" ]; then
+    OMATERM_FLAVOR="lite"
+    echo "$OMATERM_FLAVOR" >"$HOME/.config/omaterm/flavor"
+    return
+  fi
+
+  section "Selecting flavor..."
+  case "${OMATERM_FLAVOR:-}" in
+    hatta | lite) ;;
+    "")
+      local persisted=""
+      [ -f "$HOME/.config/omaterm/flavor" ] && persisted="$(cat "$HOME/.config/omaterm/flavor")"
+      case "$persisted" in
+        hatta | lite) OMATERM_FLAVOR="$persisted" ;;
+        *)
+          echo "Omaterm Lite's Hatta flavor adds Oh My Zsh + Powerlevel10k + Forge."
+          if prompt_confirm "Use the Hatta terminal setup?" "n"; then
+            OMATERM_FLAVOR="hatta"
+          else
+            OMATERM_FLAVOR="lite"
+          fi
+          ;;
+      esac
+      ;;
+    *)
+      echo "Error: invalid OMATERM_FLAVOR='${OMATERM_FLAVOR:-}' (use 'hatta' or 'lite')" >&2
+      exit 1
+      ;;
+  esac
+
+  echo "$OMATERM_FLAVOR" >"$HOME/.config/omaterm/flavor"
+  echo "✓ Flavor: $OMATERM_FLAVOR"
+}
+
 interactive_setup() {
   section "Interactive setup..."
 
@@ -339,6 +479,7 @@ configure_parallel_builds() {
 
 run_installation() {
   resolve_profile
+  resolve_flavor
 
   # Use all cores for compilation
   configure_parallel_builds
@@ -346,11 +487,13 @@ run_installation() {
   # OS-specific package installation
   install_packages
 
-  # Make Zsh the default shell before Omadots writes shell config
+  # Make Zsh the default shell before Hatta/lite writes shell config
   configure_shell
 
-  # Omadots
-  install_omadots
+  # Hatta flavor: install OMZ + p10k + forge + drop config
+  if [ "$OMATERM_FLAVOR" = "hatta" ]; then
+    install_hatta_shell
+  fi
 
   # Configs and bins
   install_configs
@@ -390,11 +533,16 @@ fi
 
 REPO="https://github.com/hattapauzi/omaterm-lite.git"
 OMATERM_REF="${OMATERM_REF:-master}"
-INSTALLER_DIR="$(mktemp -d)"
-trap 'rm -rf "$INSTALLER_DIR"' EXIT
 
-echo "Cloning Omaterm Lite from $REPO ($OMATERM_REF)..."
-git clone --depth 1 --branch "$OMATERM_REF" "$REPO" "$INSTALLER_DIR"
+if [ -n "${OMATERM_INSTALLER_DIR:-}" ] && [ -d "$OMATERM_INSTALLER_DIR" ]; then
+  INSTALLER_DIR="$OMATERM_INSTALLER_DIR"
+  echo "Using local installer dir: $INSTALLER_DIR"
+else
+  INSTALLER_DIR="$(mktemp -d)"
+  trap 'rm -rf "$INSTALLER_DIR"' EXIT
+  echo "Cloning Omaterm Lite from $REPO ($OMATERM_REF)..."
+  git clone --depth 1 --branch "$OMATERM_REF" "$REPO" "$INSTALLER_DIR"
+fi
 maybe_reexec_as_non_root "$OS_ID" "$INSTALLER_DIR"
 
 # OS detection and dispatch

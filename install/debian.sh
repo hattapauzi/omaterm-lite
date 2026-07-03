@@ -22,7 +22,7 @@ install_packages() {
     vim \
     clang llvm rustc libyaml-0-2 \
     curl wget gpg \
-    docker.io docker-compose-v2 \
+    docker.io docker-compose \
     kitty-terminfo
 
   # Neovim from Debian/Ubuntu repos is too old for LazyVim. Use the official stable build when needed.
@@ -77,6 +77,11 @@ install_npm_tools() {
 
 enable_services() {
   section "Enabling services..."
+
+  if ! is_systemd; then
+    echo "⚠ systemd not running — skipping service enabling"
+    return
+  fi
 
   sudo systemctl enable docker.service
   sudo systemctl start --no-block docker.service
