@@ -13,6 +13,23 @@ fi
 export EDITOR="nvim"
 export PATH="$PATH:$HOME/.local/bin"
 
+# Declare oh-my-zsh plugins early so non-interactive sourcing (e.g. `forge doctor`)
+# can detect them before the early-return below.
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+
+# For non-interactive sourcing (e.g. `forge doctor`), mirror the load markers for
+# the forge plugin/theme that the managed block below would set. The real eval
+# sits after the interactive early-return, so without this the markers are empty
+# in non-interactive contexts even though the config is present.
+if [[ $- != *i* ]]; then
+    if [[ -z "$_FORGE_PLUGIN_LOADED" ]] && grep -q 'eval.*forge zsh plugin' "${ZDOTDIR:-$HOME}/.zshrc" 2>/dev/null; then
+        _FORGE_PLUGIN_LOADED=configured
+    fi
+    if [[ -z "$_FORGE_THEME_LOADED" ]] && grep -q 'eval.*forge zsh theme' "${ZDOTDIR:-$HOME}/.zshrc" 2>/dev/null; then
+        _FORGE_THEME_LOADED=configured
+    fi
+fi
+
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
@@ -424,9 +441,6 @@ export ZSH="$HOME/.oh-my-zsh"
 # Set name of the theme to load
 ZSH_THEME="powerlevel10k/powerlevel10k"
 
-# Required plugins for non-interactive detection (before early return)
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
-
 source $ZSH/oh-my-zsh.sh
 
 # ─── Forge ───────────────────────────────────────────────────────────────────
@@ -453,6 +467,14 @@ if [[ -z "$_FORGE_THEME_LOADED" ]]; then
     eval "$(forge zsh theme)"
 fi
 # <<< forge initialize <<<
+
+# Defensive guard: if a stale _FORGE_PLUGIN_LOADED marker leaked into the
+# environment (e.g. via systemd user-session import-environment) but the
+# plugin was never actually sourced, the eval above would be skipped and the
+# forge widgets would be missing. Detect that and re-load now.
+if (( ! $+functions[forge-accept-line] )); then
+    eval "$(forge zsh plugin)"
+fi
 
 # ─── Powerlevel10k ────────────────────────────────────────────────────────────
 

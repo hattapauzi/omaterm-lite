@@ -283,6 +283,15 @@ install_hatta_shell() {
 # ~/.zshrc is sourced automatically by zsh for interactive shells.
 EOF
 
+  # Clean up _FORGE_*_LOADED markers that may have leaked into the systemd
+  # user environment from a previous session. If left behind, these markers
+  # cause the forge plugin guard in .zshrc to skip loading, breaking the
+  # ":" command dispatch (e.g. ":conversation" shows zsh history modifiers
+  # instead of running the forge command).
+  if command -v systemctl &>/dev/null && systemctl --user show-environment &>/dev/null; then
+    systemctl --user unset-environment _FORGE_PLUGIN_LOADED _FORGE_THEME_LOADED 2>/dev/null || true
+  fi
+
   echo "✓ Hatta .zshrc + .p10k.zsh + .zprofile"
 
   check_nerdfont
