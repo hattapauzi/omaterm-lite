@@ -49,8 +49,18 @@ prompt_confirm() {
 # Git identity
 if ! git config --global user.name &>/dev/null || ! git config --global user.email &>/dev/null; then
   if prompt_confirm "Identify for Git?" "y"; then
-    git config --global user.name "$(gum input --placeholder 'Name' --header 'Git name')"
-    git config --global user.email "$(gum input --placeholder 'Email' --header 'Git email')"
+    if command -v gum &>/dev/null; then
+      git config --global user.name "$(gum input --placeholder 'Name' --header 'Git name')"
+      git config --global user.email "$(gum input --placeholder 'Email' --header 'Git email')"
+    else
+      local git_name git_email
+      printf "Git name: "
+      read -r git_name
+      printf "Git email: "
+      read -r git_email
+      git config --global user.name "$git_name"
+      git config --global user.email "$git_email"
+    fi
   fi
 fi
 

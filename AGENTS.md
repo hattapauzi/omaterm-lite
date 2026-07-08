@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-Omaterm Lite is a Bash-based terminal setup for Arch, Debian/Ubuntu, and Fedora. The main installer entrypoint is `install.sh`, with OS-specific package and service logic in `install/arch.sh`, `install/debian.sh`, and `install/fedora.sh`. User-facing helper commands live in `bin/` and are copied into `~/.local/bin` during installation. Default application configuration lives under `config/`, including Neovim, Starship, and Lazygit settings. The root `Dockerfile`, `Dockerfile.debian`, and `Dockerfile.fedora` provide distro-specific validation environments.
+Omaterm Lite is a Bash-based terminal setup for Arch, Debian/Ubuntu, and Fedora, with support for server/desktop profiles and lite/hatta flavors. The main installer entrypoint is `install.sh`, with OS-specific package and service logic in `install/arch.sh`, `install/debian.sh`, and `install/fedora.sh`. User-facing helper commands live in `bin/` and are copied into `~/.local/bin` during installation. Default application configuration lives under `config/` (supporting `lite` and custom `hatta` personas). Distro-specific validation environments are provided by `Dockerfile`, `Dockerfile.debian`, `Dockerfile.fedora`, and the Hatta-flavor-specific `Dockerfile.hatta`.
 
 ## Build, Test, and Development Commands
 
@@ -10,6 +10,7 @@ Omaterm Lite is a Bash-based terminal setup for Arch, Debian/Ubuntu, and Fedora.
 - `docker build -t omaterm-test-arch -f Dockerfile .`: build the Arch test image.
 - `docker build -t omaterm-test-debian -f Dockerfile.debian .`: build the Debian test image.
 - `docker build -t omaterm-test-fedora -f Dockerfile.fedora .`: build the Fedora test image.
+- `docker build -t omaterm-test-hatta -f Dockerfile.hatta .`: build the Hatta test image (requires `omaterm-test-arch`).
 - `docker run -it --rm omaterm-test-debian`: run a built image and exercise first-run setup.
 
 Prefer Docker for installer validation. Do not run `install.sh` on your host unless you explicitly intend to change local shell, Docker, SSH, and user configuration.

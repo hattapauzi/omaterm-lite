@@ -14,6 +14,24 @@ A lightweight Omakase terminal setup for Arch/Debian/Ubuntu/Fedora, tuned for se
 curl -fsSL https://omaterm.hatta.cc/install | bash
 ```
 
+## Configuration & Customization
+
+The installer supports customization via environment variables:
+
+| Variable | Values | Default | Description |
+|---|---|---|---|
+| `OMATERM_PROFILE` | `desktop`, `server` | *Auto-detected* | Customizes system configurations. Desktop profile enables graphical/interactive elements and allows selecting a flavor. Server profile forces `lite` flavor and enables SSH service by default. |
+| `OMATERM_FLAVOR` | `hatta`, `lite` | `lite` (Server) / *Prompted* (Desktop) | Selects the shell/terminal persona. The `hatta` flavor installs Oh My Zsh, Powerlevel10k, and Forge. The `lite` flavor sets up a lighter Zsh config with the Starship prompt. |
+| `OMATERM_REF` | Any branch/commit | `master` | The git branch or tag of the repository to clone and install. |
+| `OMATERM_ALLOW_ROOT` | `1`, `0` | `0` | If set to `1`, allows the installer to run and configure packages directly under the `root` user without prompting to switch to a non-root user. |
+| `OMATERM_INSTALLER_DIR` | Path to local directory | *None* | Runs the installer using a local directory instead of cloning the repository from GitHub. |
+
+Example:
+```bash
+# Force desktop profile and hatta flavor installation locally
+OMATERM_PROFILE=desktop OMATERM_FLAVOR=hatta bash install.sh
+```
+
 ## What it sets up
 
 - **Shell**: Zsh with starship prompt, fzf, eza, zoxide (tmux available but not auto-started)
@@ -78,6 +96,10 @@ docker run -it --rm omaterm-test-debian
 # Fedora
 docker build -t omaterm-test-fedora -f Dockerfile.fedora .
 docker run -it --rm omaterm-test-fedora
+
+# Hatta flavor (requires building omaterm-test-arch first)
+docker build -t omaterm-test-hatta -f Dockerfile.hatta .
+docker run -it --rm omaterm-test-hatta
 ```
 
 Use `--rm` to remove the container when you exit. The image remains available and can be reused until you rebuild or remove it.
@@ -90,13 +112,13 @@ docker run -it --rm \
   omaterm-test-debian
 ```
 
-Use the same volume pattern for Arch or Fedora by changing the image and volume names.
+Use the same volume pattern for other images (Arch, Fedora, or Hatta) by changing the image and volume names.
 
 The first container startup runs `omaterm-setup`, which may prompt for Git identity setup. Subsequent starts with a persisted home directory skip the setup after `~/.omaterm-setup-done` exists.
 
 Clean up local test images when needed:
 
 ```bash
-docker rmi omaterm-test-arch omaterm-test-debian omaterm-test-fedora
+docker rmi omaterm-test-arch omaterm-test-debian omaterm-test-fedora omaterm-test-hatta
 ```
 
