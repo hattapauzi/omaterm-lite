@@ -216,11 +216,26 @@ maybe_reexec_as_non_root() {
 
 install_oh_my_zsh() {
   section "Installing Oh My Zsh..."
-  if [ -d "$HOME/.oh-my-zsh" ]; then
+
+  # CachyOS and some other distros ship Oh My Zsh as a system package and
+  # export ZSH=/usr/share/oh-my-zsh (or similar). The OMZ installer aborts
+  # with "The $ZSH folder already exists" when that path exists, blocking the
+  # install. Hatta needs a writable local OMZ (to clone p10k + plugins into
+  # its custom/ dir), so force the target to $HOME/.oh-my-zsh by overriding
+  # ZSH for the installer invocation only.
+  local omz_target="$HOME/.oh-my-zsh"
+
+  if [ -d "$omz_target" ]; then
     echo "✓ Oh My Zsh already installed"
     return
   fi
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+  if [ -n "${ZSH:-}" ] && [ "$ZSH" != "$omz_target" ] && [ -d "$ZSH" ]; then
+    echo "✓ System Oh My Zsh detected at $ZSH; installing a local copy at $omz_target"
+  fi
+
+  ZSH="$omz_target" \
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 }
 
 install_omz_plugins() {
