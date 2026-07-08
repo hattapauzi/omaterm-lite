@@ -322,6 +322,14 @@ install_configs() {
   echo "✓ Neovim"
   echo "✓ Lazygit"
 
+  backup_file "$HOME/.config/tmux"
+  cp -Rf "$INSTALLER_DIR/config/tmux" "$HOME/.config/"
+  echo "✓ Tmux"
+
+  backup_file "$HOME/.config/btop"
+  cp -Rf "$INSTALLER_DIR/config/btop" "$HOME/.config/"
+  echo "✓ Btop"
+
   case "$OMATERM_FLAVOR" in
   lite)
     backup_file "$HOME/.config/starship.toml"
