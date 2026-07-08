@@ -1,7 +1,7 @@
 install_packages() {
   local official_pkgs=(
     base-devel git openssh sudo less inetutils whois
-    zsh starship fzf ripgrep eza zoxide tmux btop man-db tldr
+    zsh starship fzf ripgrep eza zoxide tmux btop man-db
     vim neovim
     clang llvm rust libyaml
     lazygit lazydocker
@@ -11,6 +11,15 @@ install_packages() {
 
   section "Installing Arch packages..."
   sudo pacman -Syu --needed --noconfirm "${official_pkgs[@]}"
+
+  # tldr/tealdear: CachyOS ships tealdear which conflicts with tldr
+  if ! command -v tldr &>/dev/null && ! command -v tealdear &>/dev/null; then
+    if pacman -Si tealdear &>/dev/null; then
+      sudo pacman -S --needed --noconfirm tealdear
+    else
+      sudo pacman -S --needed --noconfirm tldr
+    fi
+  fi
 }
 
 if ! command -v yay &>/dev/null; then
