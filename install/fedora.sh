@@ -9,6 +9,7 @@ install_packages() {
     vim neovim \
     clang llvm rust cargo libyaml \
     curl wget \
+    tree-sitter-cli \
     kitty-terminfo
 
   # starship (not in Fedora repos)

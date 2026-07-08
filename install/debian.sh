@@ -9,7 +9,6 @@ install_packages() {
     return 1
     ;;
   esac
-
   section "Updating system packages..."
   sudo apt-get update
   sudo apt-get upgrade -y
@@ -68,6 +67,26 @@ install_packages() {
   if ! command -v lazydocker &>/dev/null; then
     section "Installing lazydocker..."
     curl -fsSL https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
+  fi
+
+  # tree-sitter-cli: prefer the distro package when available (Debian Trixie+/Ubuntu 24.04+),
+  # otherwise fall back to the upstream binary release for older releases.
+  if ! command -v tree-sitter &>/dev/null; then
+    section "Installing tree-sitter-cli..."
+    if sudo apt-get install -y tree-sitter-cli 2>/dev/null; then
+      :
+    else
+      local TS_ARCH
+      case "$DEB_ARCH" in
+      amd64) TS_ARCH="x64" ;;
+      arm64) TS_ARCH="arm64" ;;
+      esac
+      local TS_VERSION
+      TS_VERSION=$(curl -fsSL "https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest" | grep -Po '"tag_name": *"v\K[^"]*')
+      curl -fsSL "https://github.com/tree-sitter/tree-sitter/releases/download/v${TS_VERSION}/tree-sitter-linux-${TS_ARCH}.gz" | gunzip > /tmp/tree-sitter
+      sudo install -m 0755 /tmp/tree-sitter /usr/local/bin/tree-sitter
+      rm -f /tmp/tree-sitter
+    fi
   fi
 }
 

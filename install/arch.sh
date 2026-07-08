@@ -6,6 +6,7 @@ install_packages() {
     clang llvm rust libyaml
     lazygit lazydocker
     docker docker-buildx docker-compose
+    tree-sitter-cli
     kitty-terminfo
   )
 
