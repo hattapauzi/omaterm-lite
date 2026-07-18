@@ -364,7 +364,6 @@ install_bins() {
   cp -Rf "$INSTALLER_DIR/bin/"* "$HOME/.local/bin/"
   chmod +x "$HOME/.local/bin/"*
   echo "✓ omaterm-ssh"
-  echo "✓ omaterm-theme"
   echo "✓ omaterm-refresh"
 }
 
@@ -420,18 +419,18 @@ is_desktop() {
 resolve_profile() {
   section "Detecting profile..."
   case "${OMATERM_PROFILE:-}" in
-    desktop | server) ;;
-    "")
-      if is_desktop; then
-        OMATERM_PROFILE=desktop
-      else
-        OMATERM_PROFILE=server
-      fi
-      ;;
-    *)
-      echo "Error: invalid OMATERM_PROFILE='${OMATERM_PROFILE:-}' (use 'desktop' or 'server')" >&2
-      exit 1
-      ;;
+  desktop | server) ;;
+  "")
+    if is_desktop; then
+      OMATERM_PROFILE=desktop
+    else
+      OMATERM_PROFILE=server
+    fi
+    ;;
+  *)
+    echo "Error: invalid OMATERM_PROFILE='${OMATERM_PROFILE:-}' (use 'desktop' or 'server')" >&2
+    exit 1
+    ;;
   esac
 
   mkdir -p "$HOME/.config/omaterm"
@@ -452,26 +451,26 @@ resolve_flavor() {
 
   section "Selecting flavor..."
   case "${OMATERM_FLAVOR:-}" in
-    hatta | lite) ;;
-    "")
-      local persisted=""
-      [ -f "$HOME/.config/omaterm/flavor" ] && persisted="$(cat "$HOME/.config/omaterm/flavor")"
-      case "$persisted" in
-        hatta | lite) OMATERM_FLAVOR="$persisted" ;;
-        *)
-          echo "Omaterm Lite's Hatta flavor adds Oh My Zsh + Powerlevel10k + Forge."
-          if prompt_confirm "Use the Hatta terminal setup?" "n"; then
-            OMATERM_FLAVOR="hatta"
-          else
-            OMATERM_FLAVOR="lite"
-          fi
-          ;;
-      esac
-      ;;
+  hatta | lite) ;;
+  "")
+    local persisted=""
+    [ -f "$HOME/.config/omaterm/flavor" ] && persisted="$(cat "$HOME/.config/omaterm/flavor")"
+    case "$persisted" in
+    hatta | lite) OMATERM_FLAVOR="$persisted" ;;
     *)
-      echo "Error: invalid OMATERM_FLAVOR='${OMATERM_FLAVOR:-}' (use 'hatta' or 'lite')" >&2
-      exit 1
+      echo "Omaterm Lite's Hatta flavor adds Oh My Zsh + Powerlevel10k + Forge."
+      if prompt_confirm "Use the Hatta terminal setup?" "n"; then
+        OMATERM_FLAVOR="hatta"
+      else
+        OMATERM_FLAVOR="lite"
+      fi
       ;;
+    esac
+    ;;
+  *)
+    echo "Error: invalid OMATERM_FLAVOR='${OMATERM_FLAVOR:-}' (use 'hatta' or 'lite')" >&2
+    exit 1
+    ;;
   esac
 
   echo "$OMATERM_FLAVOR" >"$HOME/.config/omaterm/flavor"
