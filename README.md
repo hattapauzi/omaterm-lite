@@ -1,6 +1,23 @@
 # Omaterm Lite
 
-A lightweight Omakase terminal setup for Arch/Debian/Ubuntu/Fedora, tuned for server environments.
+A lightweight Omakase terminal setup for Arch/Debian/Ubuntu/Fedora. Desktop installs can choose the **Hatta** shell persona; servers stay on the minimal **lite** path.
+
+## Flavors
+
+| Flavor | When | Shell persona |
+|---|---|---|
+| **hatta** | Desktop only (prompted, or set explicitly) | Oh My Zsh + Powerlevel10k (vendored config, no p10k wizard) + Forge; Nerd Font check; no Starship |
+| **lite** | Default on server; optional on desktop | Zsh + Starship + shared shell config |
+
+Server profile always forces `lite` and enables SSH by default. Desktop auto-detects and asks whether to use Hatta.
+
+```bash
+# Hatta (desktop)
+OMATERM_PROFILE=desktop OMATERM_FLAVOR=hatta bash install.sh
+
+# lite (explicit)
+OMATERM_FLAVOR=lite bash install.sh
+```
 
 ## Requirements
 
@@ -20,48 +37,65 @@ The installer supports customization via environment variables:
 
 | Variable | Values | Default | Description |
 |---|---|---|---|
-| `OMATERM_PROFILE` | `desktop`, `server` | *Auto-detected* | Customizes system configurations. Desktop profile enables graphical/interactive elements and allows selecting a flavor. Server profile forces `lite` flavor and enables SSH service by default. |
-| `OMATERM_FLAVOR` | `hatta`, `lite` | `lite` (Server) / *Prompted* (Desktop) | Selects the shell/terminal persona. The `hatta` flavor installs Oh My Zsh, Powerlevel10k, and Forge. The `lite` flavor sets up a lighter Zsh config with the Starship prompt. |
+| `OMATERM_PROFILE` | `desktop`, `server` | *Auto-detected* | Desktop enables interactive options and flavor selection. Server forces `lite` and enables SSH by default. |
+| `OMATERM_FLAVOR` | `hatta`, `lite` | `lite` (Server) / *Prompted* (Desktop) | Shell persona. See [Flavors](#flavors). |
 | `OMATERM_REF` | Any branch/commit | `master` | The git branch or tag of the repository to clone and install. |
 | `OMATERM_ALLOW_ROOT` | `1`, `0` | `0` | If set to `1`, allows the installer to run and configure packages directly under the `root` user without prompting to switch to a non-root user. |
 | `OMATERM_INSTALLER_DIR` | Path to local directory | *None* | Runs the installer using a local directory instead of cloning the repository from GitHub. |
 
 Example:
 ```bash
-# Force desktop profile and hatta flavor installation locally
+# Force desktop profile and Hatta flavor installation locally
 OMATERM_PROFILE=desktop OMATERM_FLAVOR=hatta bash install.sh
 ```
 
 ## What it sets up
 
-- **Shell**: Zsh with starship prompt, fzf, eza, zoxide (tmux available but not auto-started)
+- **Shell**: Zsh with fzf, eza, zoxide, and tmux (not auto-started). Prompt and shell persona depend on [flavor](#flavors): Hatta (OMZ + Powerlevel10k + Forge) or lite (Starship).
 - **Editors**: Neovim (LazyVim)
 - **Dev tools**: docker, lazygit, lazydocker
 - **Networking**: SSH
 - **Git**: Interactive config for user name/email, helpful aliases
 
-## Lite changes
+## About
 
-This fork removes packages and setup flows from the upstream Omaterm install that are not needed for a lighter Ubuntu/server-focused environment.
+Omaterm Lite is a fork of [basecamp/omaterm](https://github.com/basecamp/omaterm) (an Omakase terminal setup by DHH, related to [Omarchy](https://omarchy.org)).
 
-Removed packages/tools:
+- **This project** installs directly on Arch, Debian/Ubuntu, or Fedora hosts, with optional desktop/server profiles and Hatta/lite flavors.
+- **Upstream today** is Docker-first: managed Omaterm boxes with a host `omaterm` CLI, agents, Tailscale, 1Password CLI, and related setup flows.
 
-- `tmux` (package still installed; auto-start on shell launch is removed)
+The projects have diverged; treat the lists below as what Lite deliberately omits relative to upstream's fuller tooling set, not as a live package sync.
+
+### Package and setup differences
+
+Removed packages/tools (relative to upstream-style installs):
+
+- `tmux` auto-start (package still installed; shell launch does not enter tmux)
 - `jq`
+- `luarocks`
 - `gum`
 - `gh` / `github-cli`
+- `fd`
+- `1password-cli` / `op`
 - `tailscale`
 - `mise`
 - Ruby via `mise`
 - Node via `mise`
 - `opencode` / `opencode-ai`
 - `claude-code` / `@anthropic-ai/claude-code`
+- `codex`
+- `gemini`
+- `hunk`
+- `basecamp-cli`
+- `pi`
 
 Removed setup flows:
-- tmux auto-start on shell launch (enters tmux automatically)
+
+- tmux auto-start on shell launch
 - GitHub CLI authentication prompt
 - Tailscale setup prompt
-- npm-based AI assistant installation
+- 1Password CLI setup
+- npm/mise-based AI assistant installation
 - `mise` runtime installation for Node and Ruby
 
 Kept intentionally:
@@ -121,4 +155,3 @@ Clean up local test images when needed:
 ```bash
 docker rmi omaterm-test-arch omaterm-test-debian omaterm-test-fedora omaterm-test-hatta
 ```
-
