@@ -362,7 +362,13 @@ install_bins() {
   section "Installing bins..."
   mkdir -p "$HOME/.local/bin"
   cp -Rf "$INSTALLER_DIR/bin/"* "$HOME/.local/bin/"
-  chmod +x "$HOME/.local/bin/"*
+  # Only chmod files we just installed — ~/.local/bin may contain unrelated
+  # dangling symlinks that make `chmod +x *` fail under set -e.
+  local bin
+  for bin in "$INSTALLER_DIR/bin/"*; do
+    [ -e "$bin" ] || continue
+    chmod +x "$HOME/.local/bin/$(basename "$bin")"
+  done
   echo "✓ omaterm-ssh"
   echo "✓ omaterm-refresh"
 }
