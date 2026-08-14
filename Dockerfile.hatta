@@ -21,7 +21,9 @@ RUN test -d "$HOME/.oh-my-zsh" && echo "✓ OMZ installed" && \
     test -f "$HOME/.local/bin/forge" && echo "✓ forge installed" && \
     test ! -f "$HOME/.config/starship.toml" && echo "✓ starship.toml NOT installed (Hatta path)" && \
     test -d "$HOME/.config/nvim/lua" && echo "✓ nvim config present" && \
-    test -d "$HOME/.config/lazygit" && echo "✓ lazygit config present" && \
+    test -f "$HOME/.config/lazygit/config.yml" && echo "✓ lazygit config present" && \
+    grep -q 'copyToClipboardCmd' "$HOME/.config/lazygit/config.yml" && echo "✓ lazygit OSC 52 clipboard" && \
+    grep -q 'allow-passthrough on' "$HOME/.config/tmux/tmux.conf" && echo "✓ tmux OSC 52 passthrough" && \
     ! grep -qi 'starship' "$HOME/.zshrc" && echo "✓ no starship init in .zshrc" && \
     grep -q 'powerlevel10k' "$HOME/.zshrc" && echo "✓ p10k theme in .zshrc" && \
     grep -q 'forge zsh plugin' "$HOME/.zshrc" && echo "✓ forge plugin in .zshrc" && \
