@@ -42,6 +42,7 @@ The installer supports customization via environment variables:
 | `OMATERM_REF` | Any branch/commit | `master` | The git branch or tag of the repository to clone and install. |
 | `OMATERM_ALLOW_ROOT` | `1`, `0` | `0` | If set to `1`, allows the installer to run and configure packages directly under the `root` user without prompting to switch to a non-root user. |
 | `OMATERM_INSTALLER_DIR` | Path to local directory | *None* | Runs the installer using a local directory instead of cloning the repository from GitHub. |
+| `OMATERM_SKIP_PACKAGES` | `1`, `0` | `0` | If set to `1`, skips distro package install/upgrade. Used by the Hatta test image, which already has packages from `omaterm-test-arch`. |
 
 Example:
 ```bash

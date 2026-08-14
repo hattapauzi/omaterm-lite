@@ -6,6 +6,7 @@ RUN sudo pacman -S --needed --noconfirm fontconfig && sudo pacman -Scc --noconfi
 # Copy local repo and run installer (Hatta flavor, desktop profile)
 COPY --chown=omaterm-lite:omaterm-lite . /tmp/omaterm-lite
 RUN OMATERM_INSTALLER_DIR=/tmp/omaterm-lite OMATERM_PROFILE=desktop OMATERM_FLAVOR=hatta \
+      OMATERM_SKIP_PACKAGES=1 \
       bash /tmp/omaterm-lite/install.sh && \
     rm -rf /tmp/omaterm-lite
 

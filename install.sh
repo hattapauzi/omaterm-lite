@@ -522,7 +522,11 @@ run_installation() {
   configure_parallel_builds
 
   # OS-specific package installation
-  install_packages
+  if [ "${OMATERM_SKIP_PACKAGES:-0}" = "1" ]; then
+    section "Skipping package installation (OMATERM_SKIP_PACKAGES=1)"
+  else
+    install_packages
+  fi
 
   # Make Zsh the default shell before Hatta/lite writes shell config
   configure_shell
