@@ -1,0 +1,4 @@
+# markdownlint-cli2 config used by nvim-lint (see lua/plugins/markdown.lua).
+# MD013 (line-length) is disabled: incident reports use wide tables/URLs, and
+# the diagnostics only added noise — markdown renders fine regardless.
+MD013: false
