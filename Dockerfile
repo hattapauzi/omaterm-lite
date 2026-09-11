@@ -16,7 +16,8 @@ RUN pacman -Syu --needed --noconfirm \
 
 # Create a non-root user
 RUN useradd -m -s /usr/bin/zsh omaterm-lite && \
-    echo "omaterm-lite ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/omaterm-lite
+    echo "omaterm-lite ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/omaterm-lite && \
+    chmod 0440 /etc/sudoers.d/omaterm-lite
 
 USER omaterm-lite
 WORKDIR /home/omaterm-lite
