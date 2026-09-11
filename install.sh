@@ -373,6 +373,51 @@ install_bins() {
   echo "✓ omaterm-refresh"
 }
 
+configure_sudo_editor() {
+  local nvim_path tmp editor_value
+
+  section "Configuring sudoedit editor..."
+
+  nvim_path="$(command -v nvim || true)"
+  if [ -z "$nvim_path" ]; then
+    if [ "${OMATERM_SKIP_PACKAGES:-0}" = "1" ]; then
+      echo "⚠ nvim not found; skipping sudoedit editor config"
+      return 0
+    fi
+    echo "Error: nvim not found; required to configure sudoedit" >&2
+    exit 1
+  fi
+
+  tmp="$(mktemp)"
+  if [ -x /usr/bin/vi ]; then
+    editor_value="${nvim_path}:/usr/bin/vi"
+  else
+    editor_value="$nvim_path"
+  fi
+
+  printf 'Defaults editor="%s"\nDefaults env_keep += "EDITOR VISUAL SUDO_EDITOR"\n' "$editor_value" >"$tmp"
+
+  # visudo rejects user-owned sudoers files; chown before -cf.
+  as_root chown root:root "$tmp"
+  as_root chmod 0440 "$tmp"
+  if ! as_root visudo -cf "$tmp"; then
+    as_root rm -f "$tmp"
+    echo "Error: sudoers editor drop-in failed visudo check" >&2
+    exit 1
+  fi
+
+  as_root install -m 0440 -o root -g root "$tmp" /etc/sudoers.d/20-omaterm-editor
+  as_root rm -f "$tmp"
+
+  if ! as_root visudo -c; then
+    as_root rm -f /etc/sudoers.d/20-omaterm-editor
+    echo "Error: sudoers invalid after installing editor drop-in" >&2
+    exit 1
+  fi
+
+  echo "✓ sudoedit editor: nvim"
+}
+
 configure_shell() {
   section "Configuring shell..."
   local username zsh_path current_shell
@@ -527,6 +572,8 @@ run_installation() {
   else
     install_packages
   fi
+
+  configure_sudo_editor
 
   # Make Zsh the default shell before Hatta/lite writes shell config
   configure_shell
