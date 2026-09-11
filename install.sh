@@ -406,7 +406,10 @@ configure_sudo_editor() {
     exit 1
   fi
 
-  as_root install -m 0440 -o root -g root "$tmp" /etc/sudoers.d/20-omaterm-editor
+  as_root install -m 0440 -o root -g root "$tmp" /etc/sudoers.d/20-omaterm-editor || {
+    as_root rm -f "$tmp"
+    exit 1
+  }
   as_root rm -f "$tmp"
 
   if ! as_root visudo -c; then
