@@ -103,7 +103,8 @@ Do not put these in `.zprofile`. Hatta's zprofile stays empty. Lite already sour
 ## Testing
 
 - `bash -n install.sh install/*.sh bin/omaterm-*`
-- Docker images: Arch, Debian, Fedora, and Hatta (Hatta because `config/hatta/zshrc` changes)
+- Docker images: Arch, Debian, and Hatta (Hatta because `config/hatta/zshrc` changes). Fedora Docker was not verified: the image fails at `cargo install eza` (palette compile) before the installer runs. The feature remains distro-agnostic; Fedora is expected to behave like Arch once the image builds.
+- Covering checks passed on Arch, Debian, and Hatta: `visudo -c` via sudo, drop-in `root:root 440`, `sudo printenv EDITOR=nvim`.
 - In a built image:
   - `visudo -c` succeeds
   - `/etc/sudoers.d/20-omaterm-editor` exists; `stat -c '%U:%G %a'` is `root:root 440`
