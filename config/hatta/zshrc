@@ -11,6 +11,8 @@ fi
 
 # Environment
 export EDITOR="nvim"
+export VISUAL="nvim"
+export SUDO_EDITOR="nvim"
 export PATH="$PATH:$HOME/.local/bin"
 
 # Declare oh-my-zsh plugins early so non-interactive sourcing (e.g. `forge doctor`)
