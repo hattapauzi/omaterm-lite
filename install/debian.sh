@@ -10,12 +10,12 @@ install_packages() {
     ;;
   esac
   section "Updating system packages..."
-  sudo apt-get update
-  sudo apt-get upgrade -y
+  apt_get update
+  apt_get upgrade -y
 
   section "Installing Debian packages..."
-  sudo apt-get remove -y containerd.io 2>/dev/null || true
-  sudo apt-get install -y \
+  apt_get remove -y containerd.io 2>/dev/null || true
+  apt_get install -y \
     build-essential git openssh-server libssl-dev sudo less net-tools whois \
     zsh fzf ripgrep eza zoxide tmux btop man-db \
     vim \
@@ -28,7 +28,7 @@ install_packages() {
   local NVIM_BIN
   if ! NVIM_BIN="$(type -P nvim)" || ! dpkg --compare-versions "$($NVIM_BIN --version | awk 'NR == 1 { sub(/^v/, "", $2); print $2 }')" ge "0.11.2"; then
     section "Installing Neovim..."
-    sudo apt-get remove -y neovim neovim-runtime 2>/dev/null || true
+    apt_get remove -y neovim neovim-runtime 2>/dev/null || true
     sudo rm -rf "/opt/nvim-linux-${BINARY_ARCH}"
     curl -fsSL "https://github.com/neovim/neovim/releases/download/stable/nvim-linux-${BINARY_ARCH}.tar.gz" | sudo tar -C /opt -xz
     sudo ln -sfn "/opt/nvim-linux-${BINARY_ARCH}/bin/nvim" /usr/local/bin/nvim
@@ -37,14 +37,14 @@ install_packages() {
 
   # docker-buildx (skip if docker-buildx-plugin from Docker's repo is already installed)
   if ! dpkg -l docker-buildx-plugin &>/dev/null; then
-    sudo apt-get install -y docker-buildx 2>/dev/null || true
+    apt_get install -y docker-buildx 2>/dev/null || true
   fi
 
   # tldr: Debian Trixie+ replaced tldr with tealdeer
   if apt-cache show tealdeer &>/dev/null; then
-    sudo apt-get install -y tealdeer
+    apt_get install -y tealdeer
   else
-    sudo apt-get install -y tldr
+    apt_get install -y tldr
   fi
 
   # starship (not in Debian/Ubuntu repos)
@@ -73,7 +73,7 @@ install_packages() {
   # otherwise fall back to the upstream binary release for older releases.
   if ! command -v tree-sitter &>/dev/null; then
     section "Installing tree-sitter-cli..."
-    if sudo apt-get install -y tree-sitter-cli 2>/dev/null; then
+    if apt_get install -y tree-sitter-cli 2>/dev/null; then
       :
     else
       local TS_ARCH

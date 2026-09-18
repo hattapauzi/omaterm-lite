@@ -40,6 +40,10 @@ as_root() {
   fi
 }
 
+apt_get() {
+  as_root env DEBIAN_FRONTEND=noninteractive apt-get "$@"
+}
+
 prompt_confirm() {
   local prompt="$1"
   local default="${2:-y}"
@@ -126,8 +130,8 @@ ensure_root_bootstrap_tools() {
     pacman -Syu --needed --noconfirm sudo
     ;;
   debian)
-    apt-get update
-    apt-get install -y sudo
+    apt_get update
+    apt_get install -y sudo
     ;;
   fedora)
     dnf install -y sudo
@@ -617,7 +621,7 @@ fi
 if ! command -v git &>/dev/null; then
   case "$OS_ID" in
   arch) as_root pacman -Syu --needed --noconfirm git ;;
-  debian) as_root apt-get update && as_root apt-get install -y git ;;
+  debian) apt_get update && apt_get install -y git ;;
   fedora) as_root dnf install -y git ;;
   esac
 fi
