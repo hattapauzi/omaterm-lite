@@ -41,7 +41,8 @@ as_root() {
 }
 
 apt_get() {
-  as_root env DEBIAN_FRONTEND=noninteractive apt-get "$@"
+  as_root env DEBIAN_FRONTEND=noninteractive apt-get \
+    -o Dpkg::Options::=--force-confold "$@"
 }
 
 prompt_confirm() {

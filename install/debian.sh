@@ -9,9 +9,8 @@ install_packages() {
     return 1
     ;;
   esac
-  section "Updating system packages..."
+  section "Updating package lists..."
   apt_get update
-  apt_get upgrade -y
 
   section "Installing Debian packages..."
   apt_get remove -y containerd.io 2>/dev/null || true
