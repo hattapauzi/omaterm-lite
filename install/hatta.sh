@@ -12,29 +12,30 @@ install_hatta_deps_debian() {
   section "Installing Hatta extras (Debian)..."
   apt_get install -y \
     fish \
-    golang-go \
+    golang-go cargo \
+    nodejs npm \
     luarocks \
     ruby ruby-dev \
     default-jdk \
-    perl \
+    perl cpanminus \
     imagemagick ghostscript \
     gvfs wl-clipboard \
     fontconfig || true
   # julia is universe-only on some Ubuntu releases; ignore if absent.
   apt_get install -y julia 2>/dev/null || echo "⚠ julia not in apt repos — skipping (mason julia warning stays)"
-  # cargo/rustc + pip/venv + fd + sqlite already come from install_packages.
+  # rustc + pip/venv + fd + sqlite already come from install_packages.
 }
 
 install_hatta_deps_arch() {
   section "Installing Hatta extras (Arch)..."
   sudo pacman -S --needed --noconfirm \
-    fish go luarocks ruby jdk-openjdk julia \
-    perl \
+    fish go nodejs npm luarocks ruby jdk-openjdk julia \
+    perl cpanminus \
     imagemagick ghostscript tectonic \
     gvfs wl-clipboard sqlite \
     fontconfig 2>/dev/null || \
   sudo pacman -S --needed --noconfirm \
-    fish go luarocks ruby jdk-openjdk \
+    fish go nodejs npm luarocks ruby jdk-openjdk \
     perl imagemagick ghostscript \
     gvfs wl-clipboard fontconfig || true
   # ast-grep lives in extra; fall back to cargo in the media stack below.
@@ -44,14 +45,14 @@ install_hatta_deps_arch() {
 install_hatta_deps_fedora() {
   section "Installing Hatta extras (Fedora)..."
   sudo dnf install -y \
-    fish golang luarocks ruby ruby-devel \
+    fish golang nodejs npm luarocks ruby ruby-devel \
     java-21-openjdk-devel \
     julia \
     perl perl-App-cpanminus \
     ImageMagick ghostscript tectonic \
     gvfs wl-clipboard sqlite fontconfig 2>/dev/null || \
   sudo dnf install -y \
-    fish golang luarocks ruby \
+    fish golang nodejs npm luarocks ruby \
     java-21-openjdk-devel \
     perl perl-App-cpanminus \
     ImageMagick ghostscript \
@@ -66,6 +67,7 @@ install_hatta_nvim_bridges() {
 
   # npm: neovim (provider) + prettier/markdownlint/markdown-toc (conform +
   # nvim-lint) + mermaid-cli (mmdc for snacks image diagrams).
+  # nodejs+npm come from install_hatta_deps_*; warn (don't fail) if absent.
   if command -v npm &>/dev/null; then
     sudo npm install -g --no-fund --no-audit \
       neovim prettier markdownlint-cli2 markdown-toc \
@@ -73,6 +75,8 @@ install_hatta_nvim_bridges() {
     npm install -g --no-fund --no-audit \
       neovim prettier markdownlint-cli2 markdown-toc \
       @mermaid-js/mermaid-cli || true
+  else
+    echo "⚠ npm not found — skipping node bridges (provider/formatter warnings stay)"
   fi
 
   # pip: pynvim (provider) + latex2text/pylatexenc (render-markdown latex).
@@ -88,12 +92,12 @@ install_hatta_nvim_bridges() {
       gem install --user-install --no-document neovim 2>/dev/null || true
   fi
 
-  # cpan: Neovim::Ext (provider). Non-interactive; skip silently if cpan
-  # is unconfigured — provider stays disabled via options.lua then.
+  # cpan: Neovim::Ext (provider) via cpanm only — the interactive `cpan`
+  # first-run configurator can hang, so it is never invoked here.
   if command -v cpanm &>/dev/null; then
-    sudo cpanm -n Neovim::Ext 2>/dev/null || true
-  elif command -v cpan &>/dev/null; then
-    sudo cpan -T -i Neovim::Ext </dev/null 2>/dev/null || true
+    sudo cpanm -n Neovim::Ext 2>/dev/null || echo "⚠ cpanm Neovim::Ext failed — perl provider warning stays"
+  else
+    echo "⚠ cpanm not found — skipping perl bridge (perl provider warning stays)"
   fi
 }
 
@@ -103,7 +107,9 @@ install_hatta_media_stack() {
   # ast-grep (grug-far extended capabilities).
   if ! command -v ast-grep &>/dev/null && ! command -v sg &>/dev/null; then
     section "Installing ast-grep..."
-    if command -v cargo &>/dev/null; then
+    if command -v cargo &>/dev/null && command -v timeout &>/dev/null; then
+      timeout 900 cargo install --locked ast-grep 2>/dev/null || echo "⚠ cargo ast-grep timed out/failed — trying upstream binary"
+    elif command -v cargo &>/dev/null; then
       cargo install --locked ast-grep 2>/dev/null || true
     fi
     if ! command -v ast-grep &>/dev/null && ! command -v sg &>/dev/null; then
@@ -126,9 +132,12 @@ install_hatta_media_stack() {
   fi
 
   # tectonic (snacks LaTeX math) when distro package was missing.
+  # cargo compile takes minutes; bound it so install stays best-effort.
   if ! command -v tectonic &>/dev/null && ! command -v pdflatex &>/dev/null; then
     section "Installing tectonic..."
-    if command -v cargo &>/dev/null; then
+    if command -v cargo &>/dev/null && command -v timeout &>/dev/null; then
+      timeout 900 cargo install --locked tectonic 2>/dev/null || echo "⚠ cargo tectonic timed out/failed — install texlive manually if needed"
+    elif command -v cargo &>/dev/null; then
       cargo install --locked tectonic 2>/dev/null || true
     fi
   fi
@@ -170,9 +179,8 @@ install_hatta_extras() {
   install_hatta_media_stack
   install_hatta_nerdfont
 
-  # Stale vim.pack dir trips `:checkhealth lazy`
-  # ("found existing packages at .../site/pack/core").
-  rm -rf "$HOME/.local/share/nvim/site/pack/core" 2>/dev/null || true
+  # NOTE: stale `site/pack/core` cleanup lives in install.sh (runs before
+  # these extras), so it is intentionally not duplicated here.
 
   # Best-effort headless warm-up so the Docker image ships with parsers
   # and Mason tools prebuilt. Never fails the install (no network in CI

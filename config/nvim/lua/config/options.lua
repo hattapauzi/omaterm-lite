@@ -1,14 +1,20 @@
 vim.opt.clipboard = "unnamedplus"
 
--- Server-minimal: remote-plugin providers (node/perl/python3/ruby) are
--- unused by LazyVim defaults. Disabling them silences `:checkhealth
--- vim.provider` without installing npm/pip/gem/cpan bridges.
--- Hatta (desktop) installs the real bridges via install/hatta.sh; to use
--- them there, delete these four lines (or set to 1) after install.
-vim.g.loaded_node_provider = 0
-vim.g.loaded_perl_provider = 0
-vim.g.loaded_python3_provider = 0
-vim.g.loaded_ruby_provider = 0
+-- Remote-plugin providers (node/perl/python3/ruby) are unused by LazyVim
+-- defaults. On server/lite they are disabled to silence `:checkhealth
+-- vim.provider` without installing npm/pip/gem/cpan bridges. On Hatta
+-- (desktop) install/hatta.sh installs the real bridges, so providers stay
+-- enabled there — gated on the installer-written flavor file, which is
+-- absent when this config is used standalone (defaults to quiet server
+-- behaviour).
+local _flavor_ok, _flavor_lines = pcall(vim.fn.readfile, vim.fn.expand("~/.config/omaterm/flavor"))
+local _flavor = (_flavor_ok and _flavor_lines and _flavor_lines[1]) or ""
+if _flavor ~= "hatta" then
+  vim.g.loaded_node_provider = 0
+  vim.g.loaded_perl_provider = 0
+  vim.g.loaded_python3_provider = 0
+  vim.g.loaded_ruby_provider = 0
+end
 
 -- OSC 52 paste blocks Neovim for up to 10s when the terminal does not
 -- answer, or the clipboard is not text. Use wl-copy locally; OSC 52

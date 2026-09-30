@@ -46,6 +46,35 @@ install_packages() {
     section "Installing lazydocker..."
     curl -fsSL https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
   fi
+
+  # nvim-treesitter needs tree-sitter-cli >= 0.26.1; fall back to the
+  # upstream binary when the repo snapshot is older. Guarded so an
+  # unresolvable version or failed download warns instead of failing
+  # the install under `set -euo pipefail`.
+  local ts_v
+  ts_v="$(tree-sitter --version 2>/dev/null | grep -Po 'v?\K[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
+  if [ -z "$ts_v" ] || [ "$(printf '%s\n' "0.26.1" "$ts_v" | sort -V | head -n1)" != "0.26.1" ]; then
+    local TS_ARCH
+    case "$(uname -m)" in
+    x86_64) TS_ARCH="x64" ;;
+    aarch64 | arm64) TS_ARCH="arm64" ;;
+    *) TS_ARCH="" ;;
+    esac
+    if [ -z "$TS_ARCH" ]; then
+      echo "⚠ unsupported arch for upstream tree-sitter-cli; parsers fall back to prebuilt"
+    else
+      local TS_VERSION
+      TS_VERSION=$(curl -fsSL "https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest" | grep -Po '"tag_name": *"v\K[^"]*' || true)
+      if [ -z "$TS_VERSION" ]; then
+        echo "⚠ could not resolve latest tree-sitter-cli; keeping distro version"
+      elif ! curl -fsSL "https://github.com/tree-sitter/tree-sitter/releases/download/v${TS_VERSION}/tree-sitter-linux-${TS_ARCH}.gz" 2>/dev/null | gunzip > /tmp/tree-sitter; then
+        echo "⚠ upstream tree-sitter-cli download failed; keeping distro version"
+      else
+        sudo install -m 0755 /tmp/tree-sitter /usr/local/bin/tree-sitter
+      fi
+      rm -f /tmp/tree-sitter
+    fi
+  fi
 }
 
 install_npm_tools() {

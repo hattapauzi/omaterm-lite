@@ -102,7 +102,7 @@ Kept intentionally:
 
 - `clang`
 - `llvm`
-- Rust/Cargo equivalents
+- Rust (`rustc` base; `cargo` added by Hatta extras where needed for builds)
 - `fd` (`fd-find` on Debian/Ubuntu, symlinked to `fd` — required by LazyVim `Snacks.picker`)
 - `python3-pip` / `python3-venv`, `xdg-utils`, `sqlite3`, `unzip` (Mason + picker + `vim.ui.open` support)
 

@@ -10,16 +10,13 @@ RUN apt-get update && \
       build-essential git openssh-server libssl-dev sudo less net-tools whois \
       zsh fzf ripgrep fd-find eza zoxide tmux btop man-db \
       vim \
-      clang llvm rustc cargo libyaml-0-2 \
+      clang llvm rustc libyaml-0-2 \
       curl wget gpg ca-certificates \
       unzip \
       python3-pip python3-venv \
       xdg-utils sqlite3 \
       docker.io docker-compose \
       kitty-terminfo && \
-    if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then \
-      ln -sfn "$(command -v fdfind)" /usr/local/bin/fd; \
-    fi && \
     if apt-cache show tealdeer >/dev/null 2>&1; then \
       apt-get install -y --no-install-recommends tealdeer; \
     else \

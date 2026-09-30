@@ -14,6 +14,12 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+-- Hatta installs luarocks via install/hatta.sh; server/lite has no lua
+-- toolchain, so rocks stay disabled there to silence `:checkhealth lazy`.
+-- Gated on the installer-written flavor file (absent = quiet default).
+local _rocks_ok, _rocks_lines = pcall(vim.fn.readfile, vim.fn.expand("~/.config/omaterm/flavor"))
+local _is_hatta = _rocks_ok and _rocks_lines and _rocks_lines[1] == "hatta"
+
 require("lazy").setup({
   spec = {
     -- add LazyVim and import its plugins
@@ -36,11 +42,9 @@ require("lazy").setup({
     notify = false, -- notify on update
   }, -- automatically check for plugin updates
   rocks = {
-    -- No LazyVim default plugin needs luarocks/hererocks. Disabling
-    -- silences `:checkhealth lazy` on hosts without a lua toolchain.
-    -- Hatta installs luarocks via install/hatta.sh; flip to
-    -- `enabled = true` there if you add a rocks.nvim plugin later.
-    enabled = false,
+    -- No LazyVim default plugin needs luarocks/hererocks; `_is_hatta`
+    -- enables it only where install/hatta.sh provides the toolchain.
+    enabled = _is_hatta,
   },
   performance = {
     rtp = {

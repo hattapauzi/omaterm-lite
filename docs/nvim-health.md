@@ -11,10 +11,10 @@ Goal: no **actionable** warnings, zero heavy toolchains.
 | `lazyvim`/`snacks.picker` `fd` | installed (`fd-find` + `fd` symlink on Debian/Ubuntu) |
 | `mason` `pip` | installed (`python3-pip` + `python3-venv`) |
 | `noice`/`snacks`/`render-markdown` parsers | pre-declared in `config/nvim/lua/plugins/treesitter.lua` (`bash,regex,html,yaml,…`), auto-installed on first launch |
-| `tree-sitter-cli` | installer enforces `>= 0.26.1` (`install/debian.sh`), falls back to upstream binary |
-| `vim.provider` (node/perl/python3/ruby) | disabled in `config/nvim/lua/config/options.lua` — unused on server |
-| `lazy` `rocks` | disabled in `config/nvim/lua/config/lazy.lua` — no plugin needs it |
-| stale `site/pack/core` | removed on every install (`install.sh`) |
+| `tree-sitter-cli` | installer enforces `>= 0.26.1` on all distros (`install/debian.sh`, `install/arch.sh`, `install/fedora.sh`), falls back to upstream binary with warn-instead-of-fail guards |
+| `vim.provider` (node/perl/python3/ruby) | disabled in `config/nvim/lua/config/options.lua` when flavour ≠ `hatta` — unused on server |
+| `lazy` `rocks` | enabled only when flavour = `hatta` (`config/nvim/lua/config/lazy.lua`) — no plugin needs it on server |
+| stale `site/pack/core` | removed on every install (`install.sh`; single site, not duplicated) |
 | `vim.ui.open` | `xdg-utils` installed |
 
 Deliberately **ignored** on server: `conform` non-shell formatters
@@ -29,17 +29,17 @@ image/PDF/LaTeX/Mermaid stack (`magick`, `gs`, `tectonic`, `mmdc`),
 the headless warm-up sees `~/.config/nvim`) installs everything health
 checks for:
 
-- languages: `fish`, `golang-go`, `cargo`, `luarocks`, `ruby`, `default-jdk`, `julia` (best-effort), `perl`
-- providers/bridges: npm `neovim`, pip `pynvim`, gem `neovim`, cpan `Neovim::Ext` (best-effort)
+- languages: `fish`, `golang-go`, `cargo` (Debian keeps server base at `rustc`-only), `nodejs`+`npm`, `luarocks`, `ruby`, `default-jdk`, `julia` (best-effort), `perl`+`cpanminus`
+- providers/bridges: npm `neovim`, pip `pynvim`, gem `neovim`, `cpanm` `Neovim::Ext` (cpanm-only; interactive `cpan` is never invoked)
 - formatters/linters: npm `prettier`, `markdownlint-cli2`, `markdown-toc`; pip `latex2text`/`pylatexenc`
-- docs/media: `imagemagick`, `ghostscript`, `tectonic` (or `pdflatex` fallback), npm `@mermaid-js/mermaid-cli` (`mmdc`), `ast-grep`/`sg`
+- docs/media: `imagemagick`, `ghostscript`, `tectonic` (or `pdflatex` fallback; cargo builds time-boxed at 15 min), npm `@mermaid-js/mermaid-cli` (`mmdc`), `ast-grep`/`sg`
 - desktop integration: `gvfs`, `wl-clipboard`, `sqlite3`, Hack Nerd Font
 - warm-up: `Lazy! sync` + `TSUpdateSync` headless (best-effort, never fails install)
 
-To actually *use* the providers on Hatta, remove the four
-`vim.g.loaded_*_provider = 0` lines in `config/nvim/lua/config/options.lua`
-and set `rocks.enabled = true` in `config/nvim/lua/config/lazy.lua` if you
-add a rocks.nvim plugin.
+Providers and rocks are flavour-gated in the nvim config, so Hatta is
+functional out of the box: `options.lua` skips the `loaded_*_provider = 0`
+disables and `lazy.lua` enables `rocks` when `~/.config/omaterm/flavor`
+reads `hatta`.
 
 ## Cannot be green (both flavours, do not chase)
 

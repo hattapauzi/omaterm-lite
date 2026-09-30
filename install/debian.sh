@@ -18,7 +18,7 @@ install_packages() {
     build-essential git openssh-server libssl-dev sudo less net-tools whois \
     zsh fzf ripgrep fd-find eza zoxide tmux btop man-db \
     vim \
-    clang llvm rustc cargo libyaml-0-2 \
+    clang llvm rustc libyaml-0-2 \
     curl wget gpg \
     unzip \
     python3-pip python3-venv \
@@ -81,19 +81,33 @@ install_packages() {
   fi
   if [ -z "$ts_version" ] || ! dpkg --compare-versions "$ts_version" ge "0.26.1"; then
     section "Installing tree-sitter-cli..."
-    if apt_get install -y tree-sitter-cli 2>/dev/null && dpkg --compare-versions "$(tree-sitter --version 2>/dev/null | grep -Po 'v?\K[0-9]+\.[0-9]+\.[0-9]+' | head -n1)" ge "0.26.1"; then
+    local ts_now=""
+    if apt_get install -y tree-sitter-cli 2>/dev/null; then
+      ts_now="$(tree-sitter --version 2>/dev/null | grep -Po 'v?\K[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
+    fi
+    if [ -n "$ts_now" ] && dpkg --compare-versions "$ts_now" ge "0.26.1"; then
       :
     else
       local TS_ARCH
       case "$DEB_ARCH" in
       amd64) TS_ARCH="x64" ;;
       arm64) TS_ARCH="arm64" ;;
+      *) TS_ARCH="" ;;
       esac
-      local TS_VERSION
-      TS_VERSION=$(curl -fsSL "https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest" | grep -Po '"tag_name": *"v\K[^"]*')
-      curl -fsSL "https://github.com/tree-sitter/tree-sitter/releases/download/v${TS_VERSION}/tree-sitter-linux-${TS_ARCH}.gz" | gunzip > /tmp/tree-sitter
-      sudo install -m 0755 /tmp/tree-sitter /usr/local/bin/tree-sitter
-      rm -f /tmp/tree-sitter
+      if [ -z "$TS_ARCH" ]; then
+        echo "⚠ unsupported arch for upstream tree-sitter-cli; parsers fall back to prebuilt"
+      else
+        local TS_VERSION
+        TS_VERSION=$(curl -fsSL "https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest" | grep -Po '"tag_name": *"v\K[^"]*' || true)
+        if [ -z "$TS_VERSION" ]; then
+          echo "⚠ could not resolve latest tree-sitter-cli; keeping distro version"
+        elif ! curl -fsSL "https://github.com/tree-sitter/tree-sitter/releases/download/v${TS_VERSION}/tree-sitter-linux-${TS_ARCH}.gz" 2>/dev/null | gunzip > /tmp/tree-sitter; then
+          echo "⚠ upstream tree-sitter-cli download failed; keeping distro version"
+        else
+          sudo install -m 0755 /tmp/tree-sitter /usr/local/bin/tree-sitter
+        fi
+        rm -f /tmp/tree-sitter
+      fi
     fi
   fi
 
