@@ -4,10 +4,14 @@ FROM fedora:latest
 RUN dnf upgrade -y && \
     dnf install -y @development-tools \
       git openssh-server sudo less net-tools whois \
-      zsh fzf zoxide tmux btop man-db tldr \
+      zsh fzf fd-find ripgrep zoxide tmux btop man-db tldr \
       vim neovim \
       clang llvm rust cargo libyaml \
       curl wget ca-certificates \
+      unzip \
+      python3-pip python3-virtualenv \
+      xdg-utils sqlite \
+      tree-sitter-cli \
       kitty-terminfo \
       dnf-plugins-core && \
     dnf clean all

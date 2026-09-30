@@ -1,9 +1,12 @@
 install_packages() {
   local official_pkgs=(
     base-devel git openssh sudo less inetutils whois
-    zsh starship fzf ripgrep eza zoxide tmux btop man-db
+    zsh starship fzf fd ripgrep eza zoxide tmux btop man-db
     vim neovim
     clang llvm rust libyaml
+    unzip
+    python-pip python-virtualenv
+    xdg-utils sqlite
     lazygit lazydocker
     docker docker-buildx docker-compose
     tree-sitter-cli

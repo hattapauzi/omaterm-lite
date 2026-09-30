@@ -35,6 +35,13 @@ require("lazy").setup({
     enabled = true, -- check for plugin updates periodically
     notify = false, -- notify on update
   }, -- automatically check for plugin updates
+  rocks = {
+    -- No LazyVim default plugin needs luarocks/hererocks. Disabling
+    -- silences `:checkhealth lazy` on hosts without a lua toolchain.
+    -- Hatta installs luarocks via install/hatta.sh; flip to
+    -- `enabled = true` there if you add a rocks.nvim plugin later.
+    enabled = false,
+  },
   performance = {
     rtp = {
       -- disable some rtp plugins

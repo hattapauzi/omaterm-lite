@@ -76,7 +76,6 @@ Removed packages/tools (relative to upstream-style installs):
 - `luarocks`
 - `gum`
 - `gh` / `github-cli`
-- `fd`
 - `1password-cli` / `op`
 - `tailscale`
 - `mise`
@@ -104,6 +103,8 @@ Kept intentionally:
 - `clang`
 - `llvm`
 - Rust/Cargo equivalents
+- `fd` (`fd-find` on Debian/Ubuntu, symlinked to `fd` — required by LazyVim `Snacks.picker`)
+- `python3-pip` / `python3-venv`, `xdg-utils`, `sqlite3`, `unzip` (Mason + picker + `vim.ui.open` support)
 
 These are kept for Neovim/LazyVim native tooling, Tree-sitter, Mason-installed tools, and Fedora `eza` fallback support.
 

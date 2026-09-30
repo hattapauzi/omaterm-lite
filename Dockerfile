@@ -6,11 +6,15 @@ RUN echo "MAKEFLAGS=\"-j$(nproc)\"" >> /etc/makepkg.conf
 # Update system and install official packages
 RUN pacman -Syu --needed --noconfirm \
       base-devel git openssh sudo less inetutils whois \
-      zsh starship fzf eza zoxide tmux btop man-db tldr \
+      zsh starship fzf fd ripgrep eza zoxide tmux btop man-db tldr \
       vim neovim \
       clang llvm rust libyaml \
+      unzip \
+      python-pip python-virtualenv \
+      xdg-utils sqlite \
       lazygit lazydocker \
       docker docker-buildx docker-compose \
+      tree-sitter-cli \
       kitty-terminfo && \
     pacman -Scc --noconfirm
 

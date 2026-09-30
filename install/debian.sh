@@ -16,10 +16,13 @@ install_packages() {
   apt_get remove -y containerd.io 2>/dev/null || true
   apt_get install -y \
     build-essential git openssh-server libssl-dev sudo less net-tools whois \
-    zsh fzf ripgrep eza zoxide tmux btop man-db \
+    zsh fzf ripgrep fd-find eza zoxide tmux btop man-db \
     vim \
-    clang llvm rustc libyaml-0-2 \
+    clang llvm rustc cargo libyaml-0-2 \
     curl wget gpg \
+    unzip \
+    python3-pip python3-venv \
+    xdg-utils sqlite3 \
     docker.io docker-compose \
     kitty-terminfo
 
@@ -68,11 +71,17 @@ install_packages() {
     curl -fsSL https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
   fi
 
-  # tree-sitter-cli: prefer the distro package when available (Debian Trixie+/Ubuntu 24.04+),
-  # otherwise fall back to the upstream binary release for older releases.
-  if ! command -v tree-sitter &>/dev/null; then
+  # tree-sitter-cli: prefer the distro package when it satisfies LazyVim
+  # (needs >= 0.26.1 for `:checkhealth nvim-treesitter`), otherwise fall
+  # back to the upstream binary release for older distro releases.
+  # Check version, not just existence, so an old apt tree-sitter-cli gets upgraded.
+  local ts_version=""
+  if command -v tree-sitter &>/dev/null; then
+    ts_version="$(tree-sitter --version 2>/dev/null | grep -Po 'v?\K[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
+  fi
+  if [ -z "$ts_version" ] || ! dpkg --compare-versions "$ts_version" ge "0.26.1"; then
     section "Installing tree-sitter-cli..."
-    if apt_get install -y tree-sitter-cli 2>/dev/null; then
+    if apt_get install -y tree-sitter-cli 2>/dev/null && dpkg --compare-versions "$(tree-sitter --version 2>/dev/null | grep -Po 'v?\K[0-9]+\.[0-9]+\.[0-9]+' | head -n1)" ge "0.26.1"; then
       :
     else
       local TS_ARCH
@@ -86,6 +95,13 @@ install_packages() {
       sudo install -m 0755 /tmp/tree-sitter /usr/local/bin/tree-sitter
       rm -f /tmp/tree-sitter
     fi
+  fi
+
+  # Ubuntu ships the binary as `fdfind`; Snacks explorer wants `fd`.
+  # Symlink once so both names resolve.
+  if command -v fdfind &>/dev/null && ! command -v fd &>/dev/null; then
+    sudo ln -sfn "$(command -v fdfind)" /usr/local/bin/fd
+    hash -r
   fi
 }
 

@@ -595,6 +595,21 @@ run_installation() {
   install_configs
   install_bins
 
+  # Stale vim.pack dir trips `:checkhealth lazy`
+  # ("found existing packages at .../site/pack/core"). LazyVim-only
+  # setup, so drop it on every flavour.
+  rm -rf "$HOME/.local/share/nvim/site/pack/core" 2>/dev/null || true
+
+  # Hatta (desktop) full-green extras; server/lite never runs this.
+  # Runs even under OMATERM_SKIP_PACKAGES=1 (Dockerfile.hatta reuses the
+  # base image's packages but still needs the Hatta-only stack). Placed
+  # after configs so the headless nvim warm-up sees ~/.config/nvim.
+  if [ "$OMATERM_FLAVOR" = "hatta" ]; then
+    # shellcheck source=install/hatta.sh
+    source "$INSTALLER_DIR/install/hatta.sh"
+    install_hatta_extras "$OS_ID"
+  fi
+
   # OS-specific service enabling
   enable_services
 

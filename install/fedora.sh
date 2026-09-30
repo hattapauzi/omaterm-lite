@@ -5,10 +5,13 @@ install_packages() {
   section "Installing Fedora packages..."
   sudo dnf install -y @development-tools \
     git openssh-server sudo less net-tools whois \
-    zsh fzf ripgrep zoxide tmux btop man-db tldr \
+    zsh fzf fd-find ripgrep zoxide tmux btop man-db tldr \
     vim neovim \
     clang llvm rust cargo libyaml \
     curl wget \
+    unzip \
+    python3-pip python3-virtualenv \
+    xdg-utils sqlite \
     tree-sitter-cli \
     kitty-terminfo
 
